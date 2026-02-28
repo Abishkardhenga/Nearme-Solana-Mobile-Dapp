@@ -46,3 +46,9 @@ yarn-error.*
 
 expo-env.d.ts
 # @end expo-cli
+
+
+
+#extra stuff
+.claude
+.vscode

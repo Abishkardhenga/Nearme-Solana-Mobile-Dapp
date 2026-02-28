@@ -1,9 +1,12 @@
 import { View, Text } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/hooks/useAuth';
+import { ConnectButton } from '@/components/ConnectButton';
+import {useAnotherWallet} from "@/hooks/useAnotherWallet"
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const wallet = useAnotherWallet()
 
   return (
     <Screen className="px-6 pt-8">
@@ -14,6 +17,14 @@ export default function HomeScreen() {
         Welcome back, {user?.email}
       </Text>
 
+      <ConnectButton
+        connected={wallet.connected}
+        connecting={wallet.connecting}
+        publicKey={wallet.publicKey?.toBase58() ?? null}
+        onConnect={wallet.connect}
+        onDisconnect={wallet.disconnect}
+      />
+
       <View className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
         <Text className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
           You're all set!
@@ -21,6 +32,8 @@ export default function HomeScreen() {
         <Text className="text-blue-700 dark:text-blue-300">
           This is your protected home screen. Start building your features here.
         </Text>
+
+        {wallet.connected }
       </View>
 
       <View className="mt-6">
@@ -35,7 +48,7 @@ export default function HomeScreen() {
         </View>
       </View>
     </Screen>
-  );
+  )
 }
 
 function BulletPoint({ text }: { text: string }) {

@@ -20,7 +20,7 @@ interface PaymentRequest {
   expiresAt: any;
 }
 
-export default function ScanQRScreen() {
+ function ScanQRScreen() {
   const {walletPublicKey} = useWalletStore();
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -246,3 +246,6 @@ export default function ScanQRScreen() {
     </View>
   );
 }
+
+
+export default ScanQRScreen;

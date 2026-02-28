@@ -1,10 +1,17 @@
-import '../src/polyfills';
-import { Slot } from 'expo-router';
-import { QueryProvider } from '@/providers/QueryProvider';
-import { AuthProvider } from '@/providers/AuthProvider';
-import { ThemeProvider } from '@/providers/ThemeProvider';
-import { NavigationGuard } from '@/providers/NavigationGuard';
-import '../global.css';
+import "../src/polyfills"
+
+
+global.Buffer = require("buffer").Buffer
+
+
+
+
+import { Slot } from "expo-router"
+import { QueryProvider } from "@/providers/QueryProvider"
+import { AuthProvider } from "@/providers/AuthProvider"
+import { ThemeProvider } from "@/providers/ThemeProvider"
+import { NavigationGuard } from "@/providers/NavigationGuard"
+import "../global.css"
 
 export default function RootLayout() {
   return (
@@ -17,5 +24,5 @@ export default function RootLayout() {
         </ThemeProvider>
       </AuthProvider>
     </QueryProvider>
-  );
+  )
 }

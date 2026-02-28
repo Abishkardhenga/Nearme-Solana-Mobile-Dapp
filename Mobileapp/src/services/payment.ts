@@ -1,4 +1,7 @@
-import {Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL} from "@solana/web3.js";
+
+import "../polyfills"
+
+import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import {createTransferInstruction, getAssociatedTokenAddress, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import {transact} from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 
