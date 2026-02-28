@@ -56,13 +56,15 @@ export default function MapHomeScreen() {
   // Load nearby merchants when location is available
   useEffect(() => {
     if (location && hasPermission) {
-      loadNearbyMerchants();
+      // Set map region immediately
       setRegion({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
       });
+      // Load merchants in background (non-blocking)
+      loadNearbyMerchants();
     }
   }, [location, hasPermission]);
 
@@ -91,12 +93,13 @@ export default function MapHomeScreen() {
       });
 
       const data = result.data as {merchants: Merchant[]};
-      setMerchants(data.merchants);
-      console.log(`Loaded ${data.merchants.length} nearby merchants`);
+      setMerchants(data.merchants || []);
+      console.log(`Loaded ${data.merchants?.length || 0} nearby merchants`);
     } catch (err: any) {
       console.error("Failed to load merchants:", err);
       setError("Failed to load nearby merchants");
-      Alert.alert("Error", "Failed to load nearby merchants. Please try again.");
+      setMerchants([]); // Set empty array so map still shows
+      // Don't show alert - just log error and show map anyway
     } finally {
       setLoading(false);
     }
@@ -230,19 +233,25 @@ export default function MapHomeScreen() {
         <Text className="text-white text-2xl">❤️</Text>
       </TouchableOpacity>
 
-      {/* Results Count */}
+      {/* Results Count or Error */}
       <View className="absolute bottom-8 left-4 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-lg">
-        <Text className="text-sm font-medium text-gray-900 dark:text-white">
-          {filteredMerchants.length} merchants nearby
-        </Text>
+        {error ? (
+          <Text className="text-sm font-medium text-red-600 dark:text-red-400">
+            No merchants found
+          </Text>
+        ) : (
+          <Text className="text-sm font-medium text-gray-900 dark:text-white">
+            {filteredMerchants.length} merchants nearby
+          </Text>
+        )}
       </View>
 
-      {/* Loading Overlay */}
+      {/* Loading Indicator */}
       {loading && (
-        <View className="absolute inset-0 bg-black/20 justify-center items-center">
-          <View className="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <ActivityIndicator size="large" color="#3b82f6" />
-            <Text className="mt-2 text-gray-900 dark:text-white">Loading...</Text>
+        <View className="absolute top-80 left-1/2 -ml-20 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg">
+          <View className="flex-row items-center gap-2">
+            <ActivityIndicator size="small" color="#3b82f6" />
+            <Text className="text-sm text-gray-900 dark:text-white">Loading merchants...</Text>
           </View>
         </View>
       )}
