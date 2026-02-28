@@ -12,16 +12,22 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.exsaas"
-    },
+   
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourcompany.exsaas"
+      "package": "com.yourcompany.exsaas",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCFp5EXcq4cQDjCunrqjfuk-8ex2rCt6mA"
+        }
+      }, 
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +40,18 @@
         "expo-system-ui",
         {
           "userInterfaceStyle": "automatic"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Nearme to use your location to find nearby merchants."
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "androidGoogleMapsApiKey": "AIzaSyCFp5EXcq4cQDjCunrqjfuk-8ex2rCt6mA"
         }
       ]
     ],
