@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Modal,
   ScrollView,
   Dimensions,
@@ -13,8 +12,9 @@ import {
 import MapView, {Marker, PROVIDER_GOOGLE, Region} from "react-native-maps";
 import {useLocation} from "@/hooks/useLocation";
 import {httpsCallable} from "firebase/functions";
-import {functions} from "@/services/firebase";
-import {router} from "expo-router";
+import {functions, db} from "@/services/firebase";
+import {collection, getDocs} from "firebase/firestore";
+import {useNavigation, useRoute} from "@react-navigation/native";
 import type {Merchant, MapFilters} from "@/types";
 
 const {width, height} = Dimensions.get("window");
@@ -34,6 +34,8 @@ const getPinColor = (merchant: Merchant): string => {
 };
 
 export default function MapHomeScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const {location, loading: locationLoading, hasPermission} = useLocation();
 
   const [merchants, setMerchants] = useState<Merchant[]>([]);
@@ -73,6 +75,98 @@ export default function MapHomeScreen() {
     applyFilters();
   }, [merchants, filters]);
 
+  // Handle focus on specific merchant when navigating from details
+  useEffect(() => {
+    if (route.params?.focusMerchant) {
+      try {
+        const merchant = JSON.parse(route.params.focusMerchant) as Merchant;
+
+        // Center map on the merchant
+        const newRegion = {
+          latitude: merchant.lat,
+          longitude: merchant.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+
+        setRegion(newRegion);
+
+        // Animate to the merchant location
+        if (mapRef.current) {
+          mapRef.current.animateToRegion(newRegion, 1000);
+        }
+      } catch (error) {
+        console.error("Failed to parse focus merchant:", error);
+      }
+    }
+  }, [route.params?.focusMerchant]);
+
+  const haversineDistanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const loadNearbyMerchantsFallback = async () => {
+    if (!location) return;
+
+    const snapshot = await getDocs(collection(db, "merchants"));
+    const centerLat = location.coords.latitude;
+    const centerLng = location.coords.longitude;
+    const radiusKm = 5;
+    const merchantsFromDb: Merchant[] = [];
+
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data() as any;
+      const isActive = data.isActive ?? data.active ?? false;
+      if (!isActive) return;
+
+      const lat = Number(data.lat);
+      const lng = Number(data.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const distance = haversineDistanceKm(centerLat, centerLng, lat, lng);
+      if (distance > radiusKm) return;
+
+      if (filters.onlySol && !data.acceptsSol) return;
+      if (filters.onlyUsdc && !data.acceptsUsdc) return;
+      if (filters.category && filters.category !== "All" && data.category !== filters.category) return;
+
+      merchantsFromDb.push({
+        id: docSnap.id,
+        walletAddress: data.walletAddress || "",
+        name: data.name || "Unnamed Merchant",
+        category: data.category || "Other",
+        description: data.description || "",
+        openingHours: data.openingHours || "",
+        photoUrl: data.photoUrl || "",
+        lat,
+        lng,
+        geoHash: data.geoHash || "",
+        acceptsSol: !!data.acceptsSol,
+        acceptsUsdc: !!data.acceptsUsdc,
+        isActive,
+        totalPaymentsCount: data.totalPaymentsCount || 0,
+        totalVolumeSOL: data.totalVolumeSOL || 0,
+        totalVolumeUSDC: data.totalVolumeUSDC || 0,
+        averageRating: data.averageRating || 0,
+        ratingCount: data.ratingCount || 0,
+        distance: Math.round(distance * 100) / 100,
+      });
+    });
+
+    merchantsFromDb.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    setMerchants(merchantsFromDb);
+    setError(null);
+    console.log(`Loaded ${merchantsFromDb.length} nearby merchants via Firestore fallback`);
+  };
+
   const loadNearbyMerchants = async () => {
     if (!location) return;
 
@@ -97,9 +191,17 @@ export default function MapHomeScreen() {
       console.log(`Loaded ${data.merchants?.length || 0} nearby merchants`);
     } catch (err: any) {
       console.error("Failed to load merchants:", err);
+      const errorCode = err?.code || "";
+      if (errorCode === "functions/not-found" || errorCode === "not-found") {
+        try {
+          await loadNearbyMerchantsFallback();
+          return;
+        } catch (fallbackError) {
+          console.error("Fallback merchant load failed:", fallbackError);
+        }
+      }
       setError("Failed to load nearby merchants");
       setMerchants([]); // Set empty array so map still shows
-      // Don't show alert - just log error and show map anyway
     } finally {
       setLoading(false);
     }
@@ -121,9 +223,8 @@ export default function MapHomeScreen() {
   };
 
   const handleMarkerPress = (merchant: Merchant) => {
-    router.push({
-      pathname: "/(protected)/merchant-detail",
-      params: {merchantData: JSON.stringify(merchant)},
+    navigation.navigate("MerchantDetail", {
+      merchantData: JSON.stringify(merchant),
     });
   };
 
@@ -226,7 +327,7 @@ export default function MapHomeScreen() {
 
       {/* Saved Restaurants FAB */}
       <TouchableOpacity
-        onPress={() => router.push("/(protected)/saved-restaurants")}
+        onPress={() => navigation.navigate("Saved")}
         className="absolute bottom-24 right-4 bg-teal-600 rounded-full w-14 h-14 items-center justify-center shadow-lg"
         style={{elevation: 5}}
       >

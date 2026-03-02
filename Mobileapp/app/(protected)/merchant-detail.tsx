@@ -1,15 +1,17 @@
 import {useState, useEffect} from "react";
-import {View, Text, Image, ScrollView, TouchableOpacity, Alert, Linking, Platform} from "react-native";
+import {View, Text, Image, ScrollView, TouchableOpacity, Alert} from "react-native";
 import {Screen} from "@/components/ui/Screen";
 import {Button} from "@/components/ui/Button";
-import {useLocalSearchParams, router} from "expo-router";
+import {useRoute, useNavigation} from "@react-navigation/native";
 import {useAuth} from "@/hooks/useAuth";
-import {doc, updateDoc, arrayUnion, arrayRemove, getDoc} from "firebase/firestore";
+import {doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc} from "firebase/firestore";
 import {db} from "@/services/firebase";
 import type {Merchant} from "@/types";
 
 export default function MerchantDetailScreen() {
-  const {merchantData} = useLocalSearchParams();
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const {merchantData} = route.params || {};
   const {user} = useAuth();
 
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -25,7 +27,7 @@ export default function MerchantDetailScreen() {
       } catch (error) {
         console.error("Failed to parse merchant data:", error);
         Alert.alert("Error", "Failed to load merchant details");
-        router.back();
+        navigation.goBack();
       }
     }
   }, [merchantData]);
@@ -52,20 +54,35 @@ export default function MerchantDetailScreen() {
     try {
       const userRef = doc(db, "users", user.uid);
 
-      if (isSaved) {
-        // Remove from saved
-        await updateDoc(userRef, {
-          savedMerchants: arrayRemove(merchant.id),
-        });
-        setIsSaved(false);
-        Alert.alert("Removed", `${merchant.name} has been removed from your saved restaurants`);
-      } else {
-        // Add to saved
-        await updateDoc(userRef, {
-          savedMerchants: arrayUnion(merchant.id),
+      // Check if user document exists
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        // Create user document if it doesn't exist
+        await setDoc(userRef, {
+          email: user.email,
+          savedMerchants: [merchant.id],
+          createdAt: new Date().toISOString(),
         });
         setIsSaved(true);
         Alert.alert("Saved!", `${merchant.name} has been added to your saved restaurants`);
+      } else {
+        // Document exists, proceed with update
+        if (isSaved) {
+          // Remove from saved
+          await updateDoc(userRef, {
+            savedMerchants: arrayRemove(merchant.id),
+          });
+          setIsSaved(false);
+          Alert.alert("Removed", `${merchant.name} has been removed from your saved restaurants`);
+        } else {
+          // Add to saved
+          await updateDoc(userRef, {
+            savedMerchants: arrayUnion(merchant.id),
+          });
+          setIsSaved(true);
+          Alert.alert("Saved!", `${merchant.name} has been added to your saved restaurants`);
+        }
       }
     } catch (error: any) {
       console.error("Failed to toggle save:", error);
@@ -78,21 +95,13 @@ export default function MerchantDetailScreen() {
   const handleGetDirections = () => {
     if (!merchant) return;
 
-    const scheme = Platform.select({
-      ios: "maps:",
-      android: "geo:",
+    // Navigate to Discover tab with the merchant location
+    navigation.navigate("Discover", {
+      screen: "MapHome",
+      params: {
+        focusMerchant: JSON.stringify(merchant),
+      },
     });
-
-    const url = Platform.select({
-      ios: `${scheme}${merchant.lat},${merchant.lng}?q=${encodeURIComponent(merchant.name)}`,
-      android: `${scheme}${merchant.lat},${merchant.lng}?q=${encodeURIComponent(merchant.name)}`,
-    });
-
-    if (url) {
-      Linking.openURL(url).catch(() => {
-        Alert.alert("Error", "Failed to open maps");
-      });
-    }
   };
 
   const truncateAddress = (address: string): string => {
@@ -236,7 +245,7 @@ export default function MerchantDetailScreen() {
             </Button>
 
             <Button onPress={handleGetDirections} variant="outline">
-              🗺️ Get Directions
+              🗺️ Show on Map
             </Button>
           </View>
         </View>

@@ -1,14 +1,15 @@
 import {useState, useEffect} from "react";
-import {View, Text, TouchableOpacity, FlatList, RefreshControl, Alert, Linking, Platform, Image} from "react-native";
+import {View, Text, TouchableOpacity, FlatList, RefreshControl, Alert, Image} from "react-native";
 import {Screen} from "@/components/ui/Screen";
 import {useAuth} from "@/hooks/useAuth";
 import {useLocation} from "@/hooks/useLocation";
 import {doc, getDoc, collection, query, where, getDocs} from "firebase/firestore";
 import {db} from "@/services/firebase";
-import {router} from "expo-router";
+import {useNavigation} from "@react-navigation/native";
 import type {Merchant} from "@/types";
 
 export default function SavedRestaurantsScreen() {
+  const navigation = useNavigation<any>();
   const {user} = useAuth();
   const {location} = useLocation();
 
@@ -147,27 +148,18 @@ export default function SavedRestaurantsScreen() {
   };
 
   const handleNavigate = (merchant: Merchant) => {
-    const scheme = Platform.select({
-      ios: "maps:",
-      android: "geo:",
+    // Navigate to Discover tab with the merchant location
+    navigation.navigate("Discover", {
+      screen: "MapHome",
+      params: {
+        focusMerchant: JSON.stringify(merchant),
+      },
     });
-
-    const url = Platform.select({
-      ios: `${scheme}${merchant.lat},${merchant.lng}?q=${encodeURIComponent(merchant.name)}`,
-      android: `${scheme}${merchant.lat},${merchant.lng}?q=${encodeURIComponent(merchant.name)}`,
-    });
-
-    if (url) {
-      Linking.openURL(url).catch(() => {
-        Alert.alert("Error", "Failed to open maps");
-      });
-    }
   };
 
   const handleMerchantPress = (merchant: Merchant) => {
-    router.push({
-      pathname: "/(protected)/merchant-detail",
-      params: {merchantData: JSON.stringify(merchant)},
+    navigation.navigate("MerchantDetail", {
+      merchantData: JSON.stringify(merchant),
     });
   };
 
@@ -256,7 +248,7 @@ export default function SavedRestaurantsScreen() {
               Start exploring and save your favorite crypto-accepting restaurants!
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/(protected)/map-home")}
+              onPress={() => navigation.navigate("Discover")}
               className="bg-blue-600 rounded-lg px-6 py-3"
             >
               <Text className="text-white font-bold">Explore Map</Text>
