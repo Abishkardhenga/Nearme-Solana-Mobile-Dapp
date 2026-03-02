@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import {Screen} from "@/components/ui/Screen";
 import {Button} from "@/components/ui/Button";
-import {useLocalSearchParams, router} from "expo-router";
+import {useRoute} from "@react-navigation/native";
 import {httpsCallable} from "firebase/functions";
 import {functions} from "@/services/firebase";
 import QRCode from "react-native-qrcode-svg";
@@ -20,7 +20,8 @@ import {getSOLPriceUSD, getUSDCPriceUSD} from "@/services/payment";
 const {width} = Dimensions.get("window");
 
 export default function RequestPaymentScreen() {
-  const {merchantId} = useLocalSearchParams();
+  const route = useRoute<any>();
+  const {merchantId} = route.params || {};
 
   const [currency, setCurrency] = useState<"SOL" | "USDC">("SOL");
   const [amount, setAmount] = useState<string>("");

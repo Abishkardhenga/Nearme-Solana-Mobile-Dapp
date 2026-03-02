@@ -1,11 +1,13 @@
 import {View, Text, TouchableOpacity, Linking, Animated} from "react-native";
 import {Screen} from "@/components/ui/Screen";
 import {Button} from "@/components/ui/Button";
-import {useLocalSearchParams, router} from "expo-router";
+import {useRoute, useNavigation} from "@react-navigation/native";
 import {useEffect, useRef} from "react";
 
 export default function PaymentSuccessScreen() {
-  const {txSignature, amount, currency, merchantName} = useLocalSearchParams();
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const {txSignature, amount, currency, merchantName} = route.params || {};
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -33,7 +35,7 @@ export default function PaymentSuccessScreen() {
   };
 
   const handleBackToMap = () => {
-    router.replace("/(protected)/map-home");
+    navigation.navigate("Discover");
   };
 
   return (

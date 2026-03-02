@@ -3,14 +3,29 @@ import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
+import { useAnotherWallet } from '@/hooks/useAnotherWallet';
+import { ConnectButton } from '@/components/ConnectButton';
+
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
 
+
+
+  
+
+  const wallet = useAnotherWallet()
+
+
   const handleSignOut = async () => {
     setLoading(true);
     try {
+      // Disconnect wallet first
+      if (wallet.connected) {
+        await wallet.disconnect();
+      }
+      // Then sign out from Firebase
       await signOut();
       // NavigationGuard will handle redirect
     } catch (error) {
@@ -25,6 +40,15 @@ export default function ProfileScreen() {
       <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
         Profile
       </Text>
+
+
+       <ConnectButton
+              connected={wallet.connected}
+              connecting={wallet.connecting}
+              publicKey={wallet.publicKey?.toBase58() ?? null}
+              onConnect={wallet.connect}
+              onDisconnect={wallet.disconnect}
+            />
 
       <View className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
         <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">

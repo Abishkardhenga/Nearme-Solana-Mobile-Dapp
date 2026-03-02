@@ -4,18 +4,21 @@ import { Screen } from '@/components/ui/Screen';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
-export default function SignupScreen({ navigation }: any) {
+export default function SignupMerchantScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const { signUp } = useAuth();
 
   const handleSignup = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword || !businessName) {
       setError('Please fill in all fields');
       return;
     }
@@ -34,7 +37,26 @@ export default function SignupScreen({ navigation }: any) {
     setError('');
 
     try {
-      await signUp(email, password);
+      const userCredential = await signUp(email, password);
+
+      // Create merchant profile in Firestore
+      await setDoc(doc(db, 'merchants', userCredential.user.uid), {
+        userId: userCredential.user.uid,
+        businessName,
+        email,
+        createdAt: new Date(),
+        status: 'pending',
+        isMerchant: true,
+      });
+
+      // Create user profile with merchant flag
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        email,
+        isMerchant: true,
+        merchantId: userCredential.user.uid,
+        createdAt: new Date(),
+      });
+
       // NavigationGuard will handle redirect
     } catch (err: any) {
       setError(err.message || 'Signup failed');
@@ -53,19 +75,27 @@ export default function SignupScreen({ navigation }: any) {
           {/* Header with icon */}
           <View className="items-center mb-8">
             <View style={styles.iconContainer}>
-              <Text className="text-5xl">🚀</Text>
+              <Text className="text-5xl">🏪</Text>
             </View>
             <Text className="text-4xl font-bold text-gray-900 dark:text-white mb-2 mt-4">
-              Create Account
+              Merchant Registration
             </Text>
-            <Text className="text-base text-gray-600 dark:text-gray-400">
-              Join the crypto payment revolution
+            <Text className="text-base text-gray-600 dark:text-gray-400 text-center px-4">
+              Start accepting crypto payments at your business
             </Text>
           </View>
 
           {/* Form Card */}
           <View style={styles.formCard} className="mb-6">
             <View className="gap-4">
+              <Input
+                label="Business Name"
+                value={businessName}
+                onChangeText={setBusinessName}
+                placeholder="Your Business Name"
+                autoComplete="off"
+              />
+
               <Input
                 label="Email"
                 value={email}
@@ -100,7 +130,7 @@ export default function SignupScreen({ navigation }: any) {
           {/* Sign Up Button */}
           <View style={styles.buttonContainer} className="mb-6">
             <Button onPress={handleSignup} loading={loading}>
-              <Text className="text-white font-bold text-base">Sign Up</Text>
+              <Text className="text-white font-bold text-base">Create Merchant Account</Text>
             </Button>
           </View>
 
@@ -132,10 +162,10 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#D1FAE5',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#7C3AED',
+    shadowColor: '#10b981',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -145,14 +175,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
-    shadowColor: '#7C3AED',
+    shadowColor: '#10b981',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
   },
   buttonContainer: {
-    shadowColor: '#7C3AED',
+    shadowColor: '#10b981',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -1,5 +1,8 @@
 // Load polyfills FIRST before anything else
 import './src/polyfills';
 
-// Then load expo-router entry point
-import 'expo-router/entry';
+// Register the app
+import { registerRootComponent } from 'expo';
+import App from './App';
+
+registerRootComponent(App);

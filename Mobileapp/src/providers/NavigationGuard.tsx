@@ -26,25 +26,32 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
     const inProtected = segments[0] === '(protected)';
     const inPublic = segments[0] === '(public)';
 
-    // Routing logic - prevent infinite loops by checking current route first
-    if (isConnected && inProtected && segments[1] !== 'map-home') {
-      router.replace('/(protected)/map-home');
-      return; // Don't set ready yet, wait for navigation to complete
+    // If user is not logged in, redirect to public routes
+    if (!user) {
+      if (!completed && !inPublic) {
+        router.replace('/(public)/onboarding');
+        return;
+      }
+
+      if (completed && !inPublic) {
+        router.replace('/(public)/login');
+        return;
+      }
     }
 
-    if (!completed && !inPublic) {
-      router.replace('/(public)/onboarding');
-      return;
-    }
+    // User is logged in, handle protected routes
+    if (user) {
+      // If wallet is connected, go to map-home
+      if (isConnected && inProtected && segments[1] !== 'map-home') {
+        router.replace('/(protected)/map-home');
+        return;
+      }
 
-    if (completed && !user && !inPublic) {
-      router.replace('/(public)/login');
-      return;
-    }
-
-    if (user && !inProtected) {
-      router.replace('/(protected)');
-      return;
+      // If not in protected routes, redirect to protected
+      if (!inProtected) {
+        router.replace('/(protected)');
+        return;
+      }
     }
 
     // Only set navigation ready if no redirect occurred

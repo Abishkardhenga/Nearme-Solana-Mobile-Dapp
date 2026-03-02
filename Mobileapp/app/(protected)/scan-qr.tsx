@@ -7,7 +7,7 @@ import {doc, getDoc} from "firebase/firestore";
 import {httpsCallable} from "firebase/functions";
 import {db, functions} from "@/services/firebase";
 import {useWalletStore} from "@/store";
-import {router} from "expo-router";
+import {useNavigation} from "@react-navigation/native";
 import {payWithSOL, payWithUSDC} from "@/services/payment";
 
 interface PaymentRequest {
@@ -21,6 +21,7 @@ interface PaymentRequest {
 }
 
  function ScanQRScreen() {
+  const navigation = useNavigation<any>();
   const {walletPublicKey} = useWalletStore();
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -100,20 +101,17 @@ interface PaymentRequest {
       console.log("Payment request fulfilled on server");
 
       // Navigate to success screen
-      router.replace({
-        pathname: "/(protected)/payment-success",
-        params: {
-          txSignature: result.txSignature,
-          amount: paymentRequest.amount.toString(),
-          currency: paymentRequest.currency,
-          merchantName: paymentRequest.merchantName,
-        },
+      navigation.replace("PaymentSuccess", {
+        txSignature: result.txSignature,
+        amount: paymentRequest.amount.toString(),
+        currency: paymentRequest.currency,
+        merchantName: paymentRequest.merchantName,
       });
     } catch (error: any) {
       console.error("Payment failed:", error);
       Alert.alert("Payment Failed", error.message || "Failed to complete payment", [
         {text: "Try Again", onPress: () => setPaying(false)},
-        {text: "Cancel", onPress: () => router.back()},
+        {text: "Cancel", onPress: () => navigation.goBack()},
       ]);
     }
   };
@@ -222,7 +220,7 @@ interface PaymentRequest {
         <View className="flex-1 bg-black/40">
           {/* Header */}
           <View className="pt-12 px-6">
-            <TouchableOpacity onPress={() => router.back()} className="mb-4">
+            <TouchableOpacity onPress={() => navigation.goBack()} className="mb-4">
               <Text className="text-white text-4xl">←</Text>
             </TouchableOpacity>
             <Text className="text-2xl font-bold text-white mb-2">Scan QR Code</Text>

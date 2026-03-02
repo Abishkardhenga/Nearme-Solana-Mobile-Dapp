@@ -21,15 +21,15 @@ export function Button({
   const baseStyles = 'px-6 py-3 rounded-lg items-center justify-center';
 
   const variantStyles = {
-    primary: 'bg-blue-600 active:bg-blue-700',
+    primary: 'bg-purple-600 active:bg-purple-700',
     secondary: 'bg-gray-600 active:bg-gray-700',
-    outline: 'border-2 border-blue-600 active:bg-blue-50 dark:active:bg-gray-800',
+    outline: 'border-2 border-purple-600 active:bg-purple-50 dark:active:bg-gray-800',
   };
 
   const textStyles = {
     primary: 'text-white font-semibold',
     secondary: 'text-white font-semibold',
-    outline: 'text-blue-600 dark:text-blue-400 font-semibold',
+    outline: 'text-purple-600 dark:text-purple-400 font-semibold',
   };
 
   const isDisabled = disabled || loading;
@@ -43,7 +43,7 @@ export function Button({
       } ${className}`}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#2563eb' : '#ffffff'} />
+        <ActivityIndicator color={variant === 'outline' ? '#7C3AED' : '#ffffff'} />
       ) : (
         <Text className={textStyles[variant]}>{children}</Text>
       )}
