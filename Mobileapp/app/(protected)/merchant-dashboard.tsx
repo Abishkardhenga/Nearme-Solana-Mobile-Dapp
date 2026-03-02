@@ -3,9 +3,8 @@ import {View, Text, ScrollView, TouchableOpacity, Switch, ActivityIndicator, Ale
 import {Screen} from "@/components/ui/Screen";
 import {Button} from "@/components/ui/Button";
 import {useAuth} from "@/hooks/useAuth";
-import {doc, getDoc, updateDoc, collection, query, where, orderBy, limit, getDocs} from "firebase/firestore";
+import {doc, updateDoc, collection, query, where, orderBy, limit, getDocs} from "firebase/firestore";
 import {db} from "@/services/firebase";
-import {router} from "expo-router";
 import type {Merchant} from "@/types";
 
 interface Transaction {
@@ -17,7 +16,7 @@ interface Transaction {
   createdAt: any;
 }
 
-export default function MerchantDashboardScreen() {
+export default function MerchantDashboardScreen({ navigation }: any) {
   const {user} = useAuth();
 
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -25,6 +24,7 @@ export default function MerchantDashboardScreen() {
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [updatingStatus, setUpdatingStatus] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadMerchantData();
@@ -37,40 +37,41 @@ export default function MerchantDashboardScreen() {
     }
 
     try {
-      // Get user's merchant ID
-      const userDoc = await getDoc(doc(db, "users", user.uid));
+      setError(null);
 
-      if (!userDoc.exists() || !userDoc.data()?.isMerchant) {
+      // Query merchants collection directly by userId
+      const merchantsQuery = query(
+        collection(db, "merchants"),
+        where("userId", "==", user.uid),
+        limit(1)
+      );
+
+      const merchantSnapshot = await getDocs(merchantsQuery);
+
+      if (merchantSnapshot.empty) {
+        console.log("No merchant found for user:", user.uid);
         setLoading(false);
         return;
       }
 
-      const userId = userDoc.data().merchantId;
-      setMerchantId(userId);
-
-      // Get merchant data
-      const merchantDoc = await getDoc(doc(db, "merchants", userId));
-
-      if (!merchantDoc.exists()) {
-        setLoading(false);
-        return;
-      }
-
+      const merchantDoc = merchantSnapshot.docs[0];
       const merchantData = merchantDoc.data();
+
+      setMerchantId(merchantDoc.id);
       setMerchant({
         id: merchantDoc.id,
         walletAddress: merchantData.walletAddress,
-        name: merchantData.name,
-        category: merchantData.category,
+        name: merchantData.name || "My Business",
+        category: merchantData.category || "General",
         description: merchantData.description || "",
         openingHours: merchantData.openingHours || "",
         photoUrl: merchantData.photoUrl || "",
-        lat: merchantData.lat,
-        lng: merchantData.lng,
-        geoHash: merchantData.geoHash,
-        acceptsSol: merchantData.acceptsSol,
-        acceptsUsdc: merchantData.acceptsUsdc,
-        isActive: merchantData.isActive,
+        lat: merchantData.lat ?? 0,
+        lng: merchantData.lng ?? 0,
+        geoHash: merchantData.geoHash || "",
+        acceptsSol: merchantData.acceptsSol ?? true,
+        acceptsUsdc: merchantData.acceptsUsdc ?? false,
+        isActive: merchantData.active !== undefined ? merchantData.active : true,
         totalPaymentsCount: merchantData.totalPaymentsCount || 0,
         totalVolumeSOL: merchantData.totalVolumeSOL || 0,
         totalVolumeUSDC: merchantData.totalVolumeUSDC || 0,
@@ -78,33 +79,39 @@ export default function MerchantDashboardScreen() {
         ratingCount: merchantData.ratingCount || 0,
       });
 
-      // Load recent transactions
-      const txQuery = query(
-        collection(db, "transactions"),
-        where("merchantId", "==", userId),
-        orderBy("createdAt", "desc"),
-        limit(5)
-      );
+      // Load recent transactions (with error handling for missing index)
+      try {
+        const txQuery = query(
+          collection(db, "transactions"),
+          where("merchantId", "==", merchantDoc.id),
+          orderBy("createdAt", "desc"),
+          limit(5)
+        );
 
-      const txSnapshot = await getDocs(txQuery);
-      const transactions: Transaction[] = [];
+        const txSnapshot = await getDocs(txQuery);
+        const transactions: Transaction[] = [];
 
-      txSnapshot.forEach((doc) => {
-        const data = doc.data();
-        transactions.push({
-          id: doc.id,
-          amount: data.amount,
-          currency: data.currency,
-          senderWallet: data.senderWallet,
-          txSignature: data.txSignature,
-          createdAt: data.createdAt,
+        txSnapshot.forEach((doc) => {
+          const data = doc.data();
+          transactions.push({
+            id: doc.id,
+            amount: data.amount,
+            currency: data.currency,
+            senderWallet: data.senderWallet,
+            txSignature: data.txSignature,
+            createdAt: data.createdAt,
+          });
         });
-      });
 
-      setRecentTransactions(transactions);
-    } catch (error) {
+        setRecentTransactions(transactions);
+      } catch (txError: any) {
+        console.log("Transactions not available yet (index may be needed):", txError);
+        // Don't fail the whole page if transactions can't load
+        setRecentTransactions([]);
+      }
+    } catch (error: any) {
       console.error("Failed to load merchant data:", error);
-      Alert.alert("Error", "Failed to load merchant data");
+      setError(error.message || "Failed to load merchant data");
     } finally {
       setLoading(false);
     }
@@ -133,18 +140,7 @@ export default function MerchantDashboardScreen() {
 
   const handleRequestPayment = () => {
     if (!merchantId) return;
-    router.push({
-      pathname: "/(protected)/request-payment",
-      params: {merchantId},
-    });
-  };
-
-  const handleViewOnChain = () => {
-    if (!merchant) return;
-
-    // Open Solana Explorer for the merchant's proof PDA
-    // We would need to store proofPdaAddress in merchant data from Phase 2
-    Alert.alert("View On-Chain Proof", "This feature requires the proof PDA address from merchant registration.");
+    navigation.navigate("RequestPayment", { merchantId });
   };
 
   const handleViewTransaction = (txSignature: string) => {
@@ -166,6 +162,21 @@ export default function MerchantDashboardScreen() {
     );
   }
 
+  if (error) {
+    return (
+      <Screen className="flex-1 justify-center items-center px-6">
+        <Text className="text-6xl mb-4">⚠️</Text>
+        <Text className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+          Error Loading Data
+        </Text>
+        <Text className="text-center text-gray-600 dark:text-gray-400 mb-6">
+          {error}
+        </Text>
+        <Button onPress={loadMerchantData}>Try Again</Button>
+      </Screen>
+    );
+  }
+
   if (!merchant || !merchantId) {
     return (
       <Screen className="flex-1 justify-center items-center px-6">
@@ -176,7 +187,7 @@ export default function MerchantDashboardScreen() {
         <Text className="text-center text-gray-600 dark:text-gray-400 mb-6">
           You haven't registered as a merchant yet. Register your business to start accepting crypto payments.
         </Text>
-        <Button onPress={() => router.push("/(protected)/register-merchant")}>Register as Merchant</Button>
+        <Button onPress={() => navigation.navigate("RegisterMerchant")}>Register as Merchant</Button>
       </Screen>
     );
   }
@@ -184,17 +195,35 @@ export default function MerchantDashboardScreen() {
   return (
     <Screen>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 pt-6 pb-24">
+        <View className="px-6 pt-6 pb-24 gap-5">
           {/* Header */}
-          <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{merchant.name}</Text>
-          <Text className="text-base text-gray-600 dark:text-gray-400 mb-6">Merchant Dashboard</Text>
+          <View className="bg-blue-600 rounded-2xl p-5">
+            <Text className="text-blue-100 text-sm font-medium mb-1">Merchant Dashboard</Text>
+            <Text className="text-white text-3xl font-bold mb-3">{merchant.name}</Text>
+            <View className="flex-row items-center justify-between">
+              <View className="bg-white/20 px-3 py-1 rounded-full">
+                <Text className="text-white text-sm font-medium">{merchant.category}</Text>
+              </View>
+              <View
+                className={`px-3 py-1 rounded-full ${
+                  merchant.isActive ? "bg-emerald-500" : "bg-gray-500"
+                }`}
+              >
+                <Text className="text-white text-sm font-semibold">
+                  {merchant.isActive ? "Open" : "Closed"}
+                </Text>
+              </View>
+            </View>
+          </View>
 
-          {/* Open/Closed Toggle */}
-          <View className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 flex-row justify-between items-center">
-            <View>
+          {/* Status Toggle */}
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 flex-row justify-between items-center border border-gray-100 dark:border-gray-700">
+            <View className="pr-3 flex-1">
               <Text className="text-lg font-bold text-gray-900 dark:text-white">Business Status</Text>
               <Text className="text-sm text-gray-500 dark:text-gray-400">
-                {merchant.isActive ? "Currently Open" : "Currently Closed"}
+                {merchant.isActive
+                  ? "You are visible to customers and accepting payments."
+                  : "Your shop is hidden from customer discovery."}
               </Text>
             </View>
             <Switch
@@ -206,55 +235,72 @@ export default function MerchantDashboardScreen() {
             />
           </View>
 
-          {/* Stats Grid */}
-          <View className="mb-6">
-            <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">Statistics</Text>
-            <View className="bg-white dark:bg-gray-800 rounded-lg p-4">
-              <View className="flex-row justify-between mb-4">
-                <View className="flex-1">
-                  <Text className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {merchant.totalPaymentsCount}
-                  </Text>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">Total Payments</Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                    {merchant.totalVolumeSOL.toFixed(2)}
-                  </Text>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">SOL Volume</Text>
-                </View>
+          {/* Business Info */}
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">Business Information</Text>
+
+            {merchant.description ? (
+              <View className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+                <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Description
+                </Text>
+                <Text className="text-base text-gray-900 dark:text-white leading-6">{merchant.description}</Text>
               </View>
-              <View className="flex-row justify-between">
-                <View className="flex-1">
-                  <Text className="text-3xl font-bold text-green-600 dark:text-green-400">
-                    ${merchant.totalVolumeUSDC.toFixed(2)}
-                  </Text>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">USDC Volume</Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                    {merchant.averageRating > 0 ? merchant.averageRating.toFixed(1) : "-"}
-                  </Text>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">
-                    Rating ({merchant.ratingCount} reviews)
-                  </Text>
-                </View>
+            ) : null}
+
+            {merchant.openingHours ? (
+              <View className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+                <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Opening Hours
+                </Text>
+                <Text className="text-base text-gray-900 dark:text-white">{merchant.openingHours}</Text>
               </View>
+            ) : null}
+
+            <View className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+              <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-2">
+                Payment Methods
+              </Text>
+              <View className="flex-row gap-2">
+                {merchant.acceptsSol ? (
+                  <View className="bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-full">
+                    <Text className="text-sm font-medium text-purple-700 dark:text-purple-300">SOL</Text>
+                  </View>
+                ) : null}
+                {merchant.acceptsUsdc ? (
+                  <View className="bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
+                    <Text className="text-sm font-medium text-green-700 dark:text-green-300">USDC</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+
+            <View>
+              <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                Location
+              </Text>
+              <Text className="text-base text-gray-900 dark:text-white">
+                {merchant.lat && merchant.lng
+                  ? `${merchant.lat.toFixed(6)}, ${merchant.lng.toFixed(6)}`
+                  : "Location not set"}
+              </Text>
             </View>
           </View>
 
           {/* Recent Transactions */}
-          <View className="mb-6">
+          <View>
             <View className="flex-row justify-between items-center mb-3">
               <Text className="text-lg font-bold text-gray-900 dark:text-white">Recent Transactions</Text>
-              <TouchableOpacity onPress={() => router.push("/(protected)/transaction-history")}>
+              <TouchableOpacity onPress={() => navigation.navigate("TransactionHistory")}>
                 <Text className="text-blue-600 dark:text-blue-400 font-medium">View All</Text>
               </TouchableOpacity>
             </View>
 
             {recentTransactions.length === 0 ? (
-              <View className="bg-white dark:bg-gray-800 rounded-lg p-6 items-center">
-                <Text className="text-gray-500 dark:text-gray-400">No transactions yet</Text>
+              <View className="bg-white dark:bg-gray-800 rounded-xl p-6 items-center border border-gray-100 dark:border-gray-700">
+                <Text className="text-gray-500 dark:text-gray-400 text-center">
+                  No transactions yet. Your latest payments will appear here.
+                </Text>
               </View>
             ) : (
               <View className="gap-2">
@@ -262,9 +308,9 @@ export default function MerchantDashboardScreen() {
                   <TouchableOpacity
                     key={tx.id}
                     onPress={() => handleViewTransaction(tx.txSignature)}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-3"
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700"
                   >
-                    <View className="flex-row justify-between items-start mb-1">
+                    <View className="flex-row justify-between items-start mb-2">
                       <Text className="text-base font-bold text-gray-900 dark:text-white">
                         {tx.amount} {tx.currency}
                       </Text>
@@ -296,12 +342,16 @@ export default function MerchantDashboardScreen() {
 
           {/* Action Buttons */}
           <View className="gap-3">
-            <Button onPress={handleRequestPayment} className="bg-blue-600">
-              💳 Request Payment
+            <Button onPress={handleRequestPayment} className="bg-blue-600 rounded-xl">
+              Request Payment
             </Button>
 
-            <Button onPress={handleViewOnChain} variant="outline">
-              🔗 View On-Chain Proof
+            <Button onPress={() => navigation.navigate("BusinessDetails")} variant="outline" className="rounded-xl">
+              View Complete Details
+            </Button>
+
+            <Button onPress={() => navigation.navigate("RegisterMerchant")} variant="outline" className="rounded-xl">
+              Edit Business Info
             </Button>
           </View>
         </View>
