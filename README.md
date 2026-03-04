@@ -7,6 +7,17 @@
   <img src="https://img.shields.io/badge/Firebase-Backend-FFCA28?style=for-the-badge&logo=firebase" alt="Firebase">
 </p>
 
+---
+
+## 🎬 Resources
+
+|                     |                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **▶ Live Demo**     | [Watch the full product demo on Loom](https://www.loom.com/share/090b491a4a2f4b4b847f6f38407b941d)                      |
+| **📊 Presentation** | [View the project presentation on Google Drive](https://drive.google.com/file/d/1Y64HRiFlg3xJJ3w5qR8gvp7mdHW5dpwH/view) |
+
+---
+
 ## 🎯 The Problem
 
 **You have crypto, but where can you spend it?**
@@ -23,11 +34,13 @@ Cryptocurrency adoption is growing, but finding physical businesses that accept 
 **NearMe** is a decentralized, location-based discovery platform that bridges the gap between crypto holders and merchants:
 
 ### For Crypto Holders:
+
 - 🗺️ **Find Crypto Merchants Near You** - Open the map and instantly see all SOL/USDC accepting cafes, restaurants, and shops in your area
 - 💳 **Pay Seamlessly** - Scan QR codes and pay directly from your Solana mobile wallet (Phantom, Solflare, etc.)
 - ✅ **Verified Merchants** - Every merchant is verified on-chain with a registration fee, preventing fake listings
 
 ### For Business Owners:
+
 - 🚀 **Easy Registration** - List your business on-chain by paying a small 0.01 SOL registration fee
 - 📈 **Attract Crypto Customers** - Get discovered by nearby crypto holders actively looking to spend
 - 📊 **Dashboard Analytics** - Track payments, manage business details, and monitor your crypto transactions
@@ -36,23 +49,27 @@ Cryptocurrency adoption is growing, but finding physical businesses that accept 
 ## ✨ Key Features
 
 ### 🔐 Blockchain-Verified Registration
+
 - Anti-spam 0.01 SOL registration fee recorded on Solana
 - Immutable merchant records stored on-chain
 - Location coordinates verified and stored via smart contract
 
 ### 📱 Mobile-First Experience
+
 - Native mobile app built with React Native + Expo
 - Solana Mobile Wallet Adapter integration
 - Real-time GPS tracking and location verification
 - Seamless wallet connection (Phantom, Solflare, etc.)
 
 ### 💰 Multi-Token Support
+
 - Accept payments in SOL
 - Accept payments in USDC
 - QR code-based payment system
 - Instant transaction confirmations
 
 ### 🗺️ Google Maps Integration
+
 - Interactive map showing all verified merchants
 - Filter by category (Restaurant, Cafe, Bar, Shop, Service)
 - Distance-based merchant discovery
@@ -90,23 +107,29 @@ Cryptocurrency adoption is growing, but finding physical businesses that accept 
 ## 📸 Screenshots
 
 ### Onboarding & Authentication
+
 <img src="screenshots/onboarding.png" width="250"> <img src="screenshots/login.png" width="250"> <img src="screenshots/signup.png" width="250">
 
 ### Discover Merchants
+
 <img src="screenshots/map-home.png" width="250"> <img src="screenshots/merchant-detail.png" width="250">
 
 ### Merchant Dashboard
+
 <img src="screenshots/register-merchant.png" width="250"> <img src="screenshots/merchant-dashboard.png" width="250"> <img src="screenshots/business-details.png" width="250">
 
 ### Payments
+
 <img src="screenshots/scan-qr.png" width="250"> <img src="screenshots/request-payment.png" width="250"> <img src="screenshots/payment-success.png" width="250">
 
 ### Profile
+
 <img src="screenshots/profile.png" width="250"> <img src="screenshots/saved-restaurants.png" width="250">
 
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **React Native** - Cross-platform mobile framework
 - **Expo** - Development tooling and build system
 - **React Navigation** - Navigation system
@@ -114,17 +137,20 @@ Cryptocurrency adoption is growing, but finding physical businesses that accept 
 - **Google Maps API** - Interactive maps
 
 ### Blockchain
+
 - **Solana** - High-performance blockchain (Devnet)
 - **Anchor Framework** - Rust-based smart contract framework
 - **Solana Mobile Wallet Adapter** - Mobile wallet integration
 - **@solana/web3.js** - JavaScript SDK for Solana
 
 ### Backend
+
 - **Firebase Firestore** - NoSQL database for merchant data
 - **Firebase Storage** - Image storage for business photos
 - **Firebase Authentication** - User authentication
 
 ### Smart Contract Details
+
 - **Language**: Rust (Anchor Framework)
 - **Program ID**: `CzvToWP9ryYfPkdJ8wxahvJwQKQ9aWLpAvdhYszHYTNd` (Devnet)
 - **Registration Fee**: 0.01 SOL (10,000,000 lamports)
@@ -176,12 +202,14 @@ Before you begin, ensure you have the following installed:
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone https://github.com/Abishkardhenga/Nearme-Solana-Mobile-Dapp
 cd Nearme
 ```
 
 2. **Setup Mobile App**
+
 ```bash
 cd Mobileapp
 npm install
@@ -190,6 +218,7 @@ npm install
 3. **Configure Environment Variables**
 
 Create a `.env` file in `Mobileapp/`:
+
 ```env
 EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
@@ -201,11 +230,13 @@ EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 ```
 
 4. **Run the Mobile App**
+
 ```bash
 npx expo start
 ```
 
 5. **Setup Smart Contract** (Optional - already deployed)
+
 ```bash
 cd ../nearme_contract
 anchor build
@@ -215,6 +246,7 @@ anchor deploy --provider.cluster devnet
 ## 🔗 Smart Contract
 
 ### Program ID (Devnet)
+
 ```
 CzvToWP9ryYfPkdJ8wxahvJwQKQ9aWLpAvdhYszHYTNd
 ```
@@ -222,6 +254,7 @@ CzvToWP9ryYfPkdJ8wxahvJwQKQ9aWLpAvdhYszHYTNd
 ### Contract Features
 
 #### Merchant Registration Instruction
+
 ```rust
 pub fn register_merchant(
     ctx: Context<RegisterMerchant>,
@@ -233,6 +266,7 @@ pub fn register_merchant(
 ```
 
 **What it does:**
+
 - ✅ Validates business name (1-64 characters)
 - ✅ Validates GPS coordinates
 - ✅ Collects 0.01 SOL registration fee
@@ -241,6 +275,7 @@ pub fn register_merchant(
 - ✅ Emits `MerchantRegisteredEvent`
 
 **Account Structure:**
+
 ```rust
 #[account]
 pub struct MerchantAccount {
@@ -312,6 +347,7 @@ anchor test
 ```
 
 **Test Coverage:**
+
 - ✅ Merchant registration with valid data
 - ✅ Registration fee payment verification
 - ✅ Duplicate registration prevention
@@ -323,18 +359,23 @@ anchor test
 ## 🌟 What Makes NearMe Special?
 
 ### 1. **Real-World Utility**
+
 Unlike many crypto projects, NearMe solves an actual problem: connecting crypto holders with businesses that accept their tokens for real-world purchases.
 
 ### 2. **Blockchain-Verified Trust**
+
 The 0.01 SOL registration fee creates skin in the game. Merchants must commit funds on-chain, ensuring only serious businesses register.
 
 ### 3. **Mobile-First Design**
+
 Built specifically for mobile with Solana Mobile Wallet Adapter, providing a seamless experience for on-the-go crypto payments.
 
 ### 4. **Decentralized Architecture**
+
 Merchant registrations live permanently on Solana's blockchain, making the merchant directory censorship-resistant and globally accessible.
 
 ### 5. **Low-Friction Onboarding**
+
 For merchants: One 0.01 SOL payment and you're listed. For customers: Connect wallet and start discovering.
 
 ## 🎯 Future Roadmap
@@ -368,6 +409,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 🏆 Hackathon Submission
 
 This project demonstrates:
+
 - ✅ **Real-world problem solving** - Bridging crypto and physical commerce
 - ✅ **Blockchain innovation** - On-chain merchant verification using Solana
 - ✅ **Mobile-first approach** - Native mobile app with Solana Mobile Wallet Adapter
