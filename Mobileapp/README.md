@@ -4,6 +4,17 @@ A decentralized location-based merchant discovery platform built on Solana block
 
 > Google Maps for Solana - Discover nearby merchants and pay with SOL/USDC
 
+---
+
+## 🎬 Resources
+
+|                     |                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **▶ Live Demo**     | [Watch the full product demo on Loom](https://www.loom.com/share/090b491a4a2f4b4b847f6f38407b941d)                      |
+| **📊 Presentation** | [View the project presentation on Google Drive](https://drive.google.com/file/d/1Y64HRiFlg3xJJ3w5qR8gvp7mdHW5dpwH/view) |
+
+---
+
 ## Features
 
 - 🗺️ **Discover Nearby Merchants** - Find crypto-accepting businesses near you
@@ -25,18 +36,23 @@ A decentralized location-based merchant discovery platform built on Solana block
 ## Screenshots
 
 ### Onboarding & Authentication
+
 <img src="screenshots/onboarding.png" width="250"> <img src="screenshots/login.png" width="250"> <img src="screenshots/signup.png" width="250">
 
 ### Discover Merchants
+
 <img src="screenshots/map-home.png" width="250"> <img src="screenshots/merchant-detail.png" width="250">
 
 ### Merchant Dashboard
+
 <img src="screenshots/register-merchant.png" width="250"> <img src="screenshots/merchant-dashboard.png" width="250"> <img src="screenshots/business-details.png" width="250">
 
 ### Payments
+
 <img src="screenshots/scan-qr.png" width="250"> <img src="screenshots/request-payment.png" width="250"> <img src="screenshots/payment-success.png" width="250">
 
 ### Profile
+
 <img src="screenshots/profile.png" width="250"> <img src="screenshots/saved-restaurants.png" width="250">
 
 ## Smart Contract
@@ -44,6 +60,7 @@ A decentralized location-based merchant discovery platform built on Solana block
 **Program ID**: `CzvToWP9ryYfPkdJ8wxahvJwQKQ9aWLpAvdhYszHYTNd` (Devnet)
 
 The NearMe smart contract handles:
+
 - Merchant registration with 0.01 SOL anti-spam fee
 - Location verification and GPS coordinate storage
 - Immutable on-chain merchant records
@@ -51,6 +68,7 @@ The NearMe smart contract handles:
 ## Installation
 
 ### Prerequisites
+
 - Node.js 18+
 - Expo CLI
 - Solana CLI
@@ -83,11 +101,13 @@ EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_maps_key
 ## How It Works
 
 **For Customers:**
+
 1. Connect Solana wallet
 2. Browse nearby merchants on map
 3. Scan QR code and pay with SOL/USDC
 
 **For Merchants:**
+
 1. Pay 0.01 SOL registration fee (on-chain)
 2. Add business details and location
 3. Generate QR codes for payments
