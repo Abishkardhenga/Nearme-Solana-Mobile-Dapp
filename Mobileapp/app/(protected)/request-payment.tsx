@@ -171,60 +171,77 @@ export default function RequestPaymentScreen() {
   };
 
   return (
-    <Screen>
-      <View className="flex-1 px-6 pt-6">
-        <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Request Payment</Text>
-        <Text className="text-base text-gray-600 dark:text-gray-400 mb-6">
-          Generate a QR code for customers to scan and pay
-        </Text>
+    <Screen className="bg-gray-50 dark:bg-gray-900">
+      <View className="flex-1 px-6 pt-6 pb-24">
+        {/* Header */}
+        <View className="bg-teal-600 rounded-2xl p-6 mb-6">
+          <Text className="text-teal-100 text-sm font-medium mb-1">Merchant Tools</Text>
+          <Text className="text-white text-3xl font-bold">Request Payment</Text>
+          <Text className="text-teal-50 text-sm mt-2">
+            Generate a QR code for customers to scan and pay
+          </Text>
+        </View>
 
-        {/* Currency Tabs */}
-        <View className="flex-row gap-2 mb-6">
-          <TouchableOpacity
-            onPress={() => setCurrency("SOL")}
-            className={`flex-1 py-3 rounded-lg border-2 ${
-              currency === "SOL"
-                ? "bg-purple-600 border-purple-600"
-                : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700"
-            }`}
-          >
-            <Text
-              className={`text-center font-bold ${
-                currency === "SOL" ? "text-white" : "text-gray-700 dark:text-gray-300"
+        {/* Currency Selection */}
+        <View className="bg-white dark:bg-gray-800 rounded-xl p-5 mb-5 border border-gray-100 dark:border-gray-700">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+            Select Currency
+          </Text>
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              onPress={() => setCurrency("SOL")}
+              className={`flex-1 py-4 rounded-xl border-2 ${
+                currency === "SOL"
+                  ? "bg-purple-600 border-purple-600"
+                  : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
               }`}
             >
-              SOL
-            </Text>
-            {currency === "SOL" && solPrice > 0 && (
-              <Text className="text-center text-xs text-white/80 mt-1">${solPrice.toFixed(2)}</Text>
-            )}
-          </TouchableOpacity>
+              <Text
+                className={`text-center font-bold text-base ${
+                  currency === "SOL" ? "text-white" : "text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                SOL
+              </Text>
+              {solPrice > 0 && (
+                <Text className={`text-center text-xs mt-1 ${
+                  currency === "SOL" ? "text-white/80" : "text-gray-500 dark:text-gray-400"
+                }`}>
+                  ${solPrice.toFixed(2)}
+                </Text>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => setCurrency("USDC")}
-            className={`flex-1 py-3 rounded-lg border-2 ${
-              currency === "USDC"
-                ? "bg-green-600 border-green-600"
-                : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700"
-            }`}
-          >
-            <Text
-              className={`text-center font-bold ${
-                currency === "USDC" ? "text-white" : "text-gray-700 dark:text-gray-300"
+            <TouchableOpacity
+              onPress={() => setCurrency("USDC")}
+              className={`flex-1 py-4 rounded-xl border-2 ${
+                currency === "USDC"
+                  ? "bg-green-600 border-green-600"
+                  : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
               }`}
             >
-              USDC
-            </Text>
-            {currency === "USDC" && (
-              <Text className="text-center text-xs text-white/80 mt-1">${usdcPrice.toFixed(2)}</Text>
-            )}
-          </TouchableOpacity>
+              <Text
+                className={`text-center font-bold text-base ${
+                  currency === "USDC" ? "text-white" : "text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                USDC
+              </Text>
+              <Text className={`text-center text-xs mt-1 ${
+                currency === "USDC" ? "text-white/80" : "text-gray-500 dark:text-gray-400"
+              }`}>
+                ${usdcPrice.toFixed(2)}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Amount Input */}
-        <View className="mb-6">
-          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Amount</Text>
-          <View className="bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-4 flex-row items-center">
+        <View className="bg-white dark:bg-gray-800 rounded-xl p-5 mb-5 border border-gray-100 dark:border-gray-700">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+            Enter Amount
+          </Text>
+          <View className="bg-gray-50 dark:bg-gray-900 rounded-xl px-4 py-5 flex-row items-center border border-gray-200 dark:border-gray-700">
             <TextInput
               className="flex-1 text-4xl font-bold text-gray-900 dark:text-white"
               placeholder="0.00"
@@ -233,46 +250,64 @@ export default function RequestPaymentScreen() {
               value={amount}
               onChangeText={setAmount}
             />
-            <Text className="text-2xl font-bold text-gray-500 dark:text-gray-400 ml-2">{currency}</Text>
+            <View className={`px-3 py-1.5 rounded-lg ${
+              currency === "SOL"
+                ? "bg-purple-100 dark:bg-purple-900/30"
+                : "bg-green-100 dark:bg-green-900/30"
+            }`}>
+              <Text className={`text-lg font-bold ${
+                currency === "SOL"
+                  ? "text-purple-700 dark:text-purple-300"
+                  : "text-green-700 dark:text-green-300"
+              }`}>
+                {currency}
+              </Text>
+            </View>
           </View>
 
           {/* USD Equivalent */}
-          <View className="mt-2 flex-row justify-between items-center">
-            <Text className="text-sm text-gray-500 dark:text-gray-400">
+          <View className="mt-3 flex-row justify-between items-center">
+            <Text className="text-sm text-gray-600 dark:text-gray-400 font-medium">
               {loadingPrice ? "Loading price..." : `≈ $${usdValue} USD`}
             </Text>
-            <TouchableOpacity onPress={loadPrices}>
-              <Text className="text-sm text-blue-600 dark:text-blue-400">Refresh Price</Text>
+            <TouchableOpacity onPress={loadPrices} className="px-3 py-1">
+              <Text className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Refresh</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Generate QR Button */}
-        <Button onPress={handleGenerateQR} disabled={loading || !amount || parseFloat(amount) <= 0}>
+        <Button
+          onPress={handleGenerateQR}
+          disabled={loading || !amount || parseFloat(amount) <= 0}
+          className="rounded-xl mb-5"
+        >
           {loading ? "Generating..." : "Generate QR Code"}
         </Button>
 
         {/* Quick Amount Buttons */}
-        <View className="mt-6">
-          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Amounts</Text>
+        <View className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+            Quick Amounts
+          </Text>
           <View className="flex-row flex-wrap gap-2">
             {currency === "SOL"
               ? [0.1, 0.5, 1, 2, 5].map((amt) => (
                   <TouchableOpacity
                     key={amt}
                     onPress={() => setAmount(amt.toString())}
-                    className="bg-purple-100 dark:bg-purple-900/30 px-4 py-2 rounded-full"
+                    className="bg-purple-100 dark:bg-purple-900/30 px-5 py-2.5 rounded-xl"
                   >
-                    <Text className="text-purple-700 dark:text-purple-300 font-medium">{amt} SOL</Text>
+                    <Text className="text-purple-700 dark:text-purple-300 font-semibold">{amt} SOL</Text>
                   </TouchableOpacity>
                 ))
               : [5, 10, 20, 50, 100].map((amt) => (
                   <TouchableOpacity
                     key={amt}
                     onPress={() => setAmount(amt.toString())}
-                    className="bg-green-100 dark:bg-green-900/30 px-4 py-2 rounded-full"
+                    className="bg-green-100 dark:bg-green-900/30 px-5 py-2.5 rounded-xl"
                   >
-                    <Text className="text-green-700 dark:text-green-300 font-medium">${amt}</Text>
+                    <Text className="text-green-700 dark:text-green-300 font-semibold">${amt}</Text>
                   </TouchableOpacity>
                 ))}
           </View>
@@ -281,38 +316,50 @@ export default function RequestPaymentScreen() {
 
       {/* QR Code Modal */}
       <Modal visible={showQR} animationType="slide" onRequestClose={handleCloseQR}>
-        <View className="flex-1 bg-white dark:bg-gray-900 justify-center items-center p-6">
+        <View className="flex-1 bg-gray-50 dark:bg-gray-900 justify-center items-center p-6">
           {/* Close Button */}
-          <TouchableOpacity onPress={handleCloseQR} className="absolute top-12 right-6 z-10">
-            <Text className="text-3xl text-gray-500">✕</Text>
+          <TouchableOpacity
+            onPress={handleCloseQR}
+            className="absolute top-12 right-6 z-10 bg-gray-200 dark:bg-gray-800 rounded-full w-10 h-10 items-center justify-center"
+          >
+            <Text className="text-2xl text-gray-700 dark:text-gray-300">✕</Text>
           </TouchableOpacity>
 
           {/* Content */}
-          <View className="items-center">
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Scan to Pay</Text>
-            <Text className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-              {amount} {currency}
-            </Text>
+          <View className="items-center w-full max-w-sm">
+            {/* Header */}
+            <View className="bg-purple-600 rounded-2xl p-6 w-full mb-6">
+              <Text className="text-purple-100 text-sm font-medium mb-1 text-center">Payment Request</Text>
+              <Text className="text-white text-3xl font-bold text-center">Scan to Pay</Text>
+              <View className="bg-purple-700 px-4 py-2 rounded-xl self-center mt-3">
+                <Text className="text-white text-2xl font-bold">
+                  {amount} {currency}
+                </Text>
+              </View>
+            </View>
 
             {/* QR Code */}
             {requestId && (
-              <View className="bg-white p-6 rounded-2xl mb-6">
-                <QRCode value={requestId} size={width * 0.7} />
+              <View className="bg-white dark:bg-gray-800 p-8 rounded-2xl mb-6 border-4 border-gray-100 dark:border-gray-700">
+                <QRCode value={requestId} size={width * 0.65} />
               </View>
             )}
 
             {/* Timer */}
             {timeRemaining > 0 && (
-              <View className="bg-blue-100 dark:bg-blue-900/30 px-6 py-3 rounded-full mb-4">
-                <Text className="text-blue-700 dark:text-blue-300 font-bold text-lg">
+              <View className="bg-blue-600 px-6 py-3 rounded-xl mb-4">
+                <Text className="text-white font-bold text-lg text-center">
                   ⏱️ Expires in {formatTimeRemaining(timeRemaining)}
                 </Text>
               </View>
             )}
 
-            <Text className="text-sm text-gray-500 dark:text-gray-400 text-center">
-              Customer will scan this QR code{"\n"}to complete the payment
-            </Text>
+            {/* Instructions */}
+            <View className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+              <Text className="text-sm text-gray-600 dark:text-gray-400 text-center leading-6">
+                Customer will scan this QR code{"\n"}to complete the payment securely
+              </Text>
+            </View>
           </View>
         </View>
       </Modal>

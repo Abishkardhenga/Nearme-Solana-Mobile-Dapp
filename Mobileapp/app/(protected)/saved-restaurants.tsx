@@ -166,46 +166,47 @@ export default function SavedRestaurantsScreen() {
   const renderMerchant = ({item}: {item: Merchant}) => (
     <TouchableOpacity
       onPress={() => handleMerchantPress(item)}
-      className="bg-white dark:bg-gray-800 rounded-lg mb-3 overflow-hidden shadow-sm"
+      className="bg-white dark:bg-gray-800 rounded-xl mb-3 overflow-hidden border border-gray-100 dark:border-gray-700"
+      style={{elevation: 2, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.05, shadowRadius: 4}}
     >
       <View className="flex-row">
         {/* Photo */}
-        <View className="w-24 h-24 bg-gray-200 dark:bg-gray-700">
+        <View className="w-28 h-28 bg-gray-200 dark:bg-gray-700">
           {item.photoUrl ? (
             <Image source={{uri: item.photoUrl}} className="w-full h-full" resizeMode="cover" />
           ) : (
             <View className="w-full h-full items-center justify-center">
-              <Text className="text-3xl">🏪</Text>
+              <Text className="text-4xl">🏪</Text>
             </View>
           )}
         </View>
 
         {/* Content */}
-        <View className="flex-1 p-3">
-          <View className="flex-row justify-between items-start mb-1">
+        <View className="flex-1 p-4">
+          <View className="flex-row justify-between items-start mb-2">
             <Text className="text-base font-bold text-gray-900 dark:text-white flex-1" numberOfLines={1}>
               {item.name}
             </Text>
             {item.distance !== undefined && (
-              <View className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full ml-2">
-                <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                  {item.distance.toFixed(2)} km
+              <View className="bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 rounded-full ml-2">
+                <Text className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                  {item.distance.toFixed(1)} km
                 </Text>
               </View>
             )}
           </View>
 
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2">{item.category}</Text>
+          <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2.5">{item.category}</Text>
 
-          <View className="flex-row gap-1 mb-2">
+          <View className="flex-row gap-1.5 mb-3">
             {item.acceptsSol && (
-              <View className="bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded">
-                <Text className="text-xs text-purple-700 dark:text-purple-300">SOL</Text>
+              <View className="bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 rounded-full">
+                <Text className="text-xs font-medium text-purple-700 dark:text-purple-300">SOL</Text>
               </View>
             )}
             {item.acceptsUsdc && (
-              <View className="bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded">
-                <Text className="text-xs text-green-700 dark:text-green-300">USDC</Text>
+              <View className="bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
+                <Text className="text-xs font-medium text-green-700 dark:text-green-300">USDC</Text>
               </View>
             )}
           </View>
@@ -213,9 +214,9 @@ export default function SavedRestaurantsScreen() {
           {/* Navigate Button */}
           <TouchableOpacity
             onPress={() => handleNavigate(item)}
-            className="bg-blue-600 rounded px-3 py-1.5 self-start"
+            className="bg-blue-600 rounded-lg px-3 py-2 self-start"
           >
-            <Text className="text-xs text-white font-medium">🗺️ Navigate</Text>
+            <Text className="text-xs text-white font-semibold">🗺️ Navigate</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -231,38 +232,50 @@ export default function SavedRestaurantsScreen() {
   }
 
   return (
-    <Screen>
-      <View className="flex-1 px-6 pt-6">
-        <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Saved Restaurants</Text>
-        <Text className="text-base text-gray-600 dark:text-gray-400 mb-6">
-          {savedMerchants.length} restaurant{savedMerchants.length !== 1 ? "s" : ""} saved
-        </Text>
+    <Screen className="bg-gray-50 dark:bg-gray-900">
+      <View className="flex-1">
+        {/* Header */}
+        <View className="px-6 pt-6 pb-4">
+          <View className="bg-pink-600 rounded-2xl p-6 mb-4">
+            <Text className="text-pink-100 text-sm font-medium mb-1">Your Favorites</Text>
+            <Text className="text-white text-3xl font-bold">Saved Restaurants</Text>
+            <View className="bg-pink-700 px-3 py-1 rounded-full self-start mt-3">
+              <Text className="text-white text-sm font-semibold">
+                {savedMerchants.length} saved
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {savedMerchants.length === 0 ? (
-          <View className="flex-1 justify-center items-center px-6">
-            <Text className="text-6xl mb-4">❤️</Text>
-            <Text className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
-              No Saved Restaurants
-            </Text>
-            <Text className="text-center text-gray-600 dark:text-gray-400 mb-6">
-              Start exploring and save your favorite crypto-accepting restaurants!
-            </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Discover")}
-              className="bg-blue-600 rounded-lg px-6 py-3"
-            >
-              <Text className="text-white font-bold">Explore Map</Text>
-            </TouchableOpacity>
+          <View className="flex-1 justify-center items-center px-6 -mt-20">
+            <View className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700 items-center">
+              <Text className="text-6xl mb-4">❤️</Text>
+              <Text className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+                No Saved Restaurants
+              </Text>
+              <Text className="text-center text-gray-600 dark:text-gray-400 mb-6">
+                Start exploring and save your favorite crypto-accepting restaurants!
+              </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Discover")}
+                className="bg-blue-600 rounded-xl px-6 py-3"
+              >
+                <Text className="text-white font-bold">Explore Map</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
-          <FlatList
-            data={savedMerchants}
-            renderItem={renderMerchant}
-            keyExtractor={(item) => item.id}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{paddingBottom: 24}}
-          />
+          <View className="flex-1 px-6">
+            <FlatList
+              data={savedMerchants}
+              renderItem={renderMerchant}
+              keyExtractor={(item) => item.id}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{paddingBottom: 100}}
+            />
+          </View>
         )}
       </View>
     </Screen>

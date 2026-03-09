@@ -144,61 +144,97 @@ interface PaymentRequest {
   if (paymentRequest) {
     // Show payment confirmation
     return (
-      <Screen>
+      <Screen className="bg-gray-50 dark:bg-gray-900">
         <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Confirm Payment</Text>
+          {/* Header */}
+          <View className="bg-blue-600 rounded-2xl p-6 w-full mb-6">
+            <Text className="text-blue-100 text-sm font-medium mb-1">Payment Request</Text>
+            <Text className="text-white text-2xl font-bold">Confirm Payment</Text>
+          </View>
 
-          <View className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full mb-6">
-            <View className="items-center mb-6">
+          {/* Payment Details Card */}
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full mb-6 border border-gray-100 dark:border-gray-700">
+            <View className="items-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+              <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-2">
+                Amount
+              </Text>
               <Text className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
                 {paymentRequest.amount}
               </Text>
-              <Text className="text-2xl text-gray-600 dark:text-gray-400">{paymentRequest.currency}</Text>
+              <View
+                className={`px-4 py-1.5 rounded-full ${
+                  paymentRequest.currency === "SOL"
+                    ? "bg-purple-100 dark:bg-purple-900/30"
+                    : "bg-green-100 dark:bg-green-900/30"
+                }`}
+              >
+                <Text
+                  className={`text-lg font-bold ${
+                    paymentRequest.currency === "SOL"
+                      ? "text-purple-700 dark:text-purple-300"
+                      : "text-green-700 dark:text-green-300"
+                  }`}
+                >
+                  {paymentRequest.currency}
+                </Text>
+              </View>
             </View>
 
-            <View className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <View className="flex-row justify-between mb-2">
-                <Text className="text-gray-600 dark:text-gray-400">To:</Text>
-                <Text className="text-gray-900 dark:text-white font-medium">{paymentRequest.merchantName}</Text>
+            <View className="gap-3">
+              <View>
+                <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Merchant
+                </Text>
+                <Text className="text-base text-gray-900 dark:text-white font-medium">
+                  {paymentRequest.merchantName}
+                </Text>
               </View>
 
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600 dark:text-gray-400">Payment Method:</Text>
+              <View>
+                <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Payment Method
+                </Text>
                 <View
-                  className={`px-3 py-1 rounded ${
+                  className={`px-3 py-2 rounded-lg self-start ${
                     paymentRequest.currency === "SOL"
                       ? "bg-purple-100 dark:bg-purple-900/30"
                       : "bg-green-100 dark:bg-green-900/30"
                   }`}
                 >
                   <Text
-                    className={`font-medium ${
+                    className={`font-semibold ${
                       paymentRequest.currency === "SOL"
                         ? "text-purple-700 dark:text-purple-300"
                         : "text-green-700 dark:text-green-300"
                     }`}
                   >
-                    {paymentRequest.currency}
+                    {paymentRequest.currency === "SOL" ? "Solana (SOL)" : "USD Coin (USDC)"}
                   </Text>
                 </View>
               </View>
             </View>
           </View>
 
+          {/* Action Buttons */}
           <View className="w-full gap-3">
-            <Button onPress={handleConfirmPayment} disabled={paying}>
+            <Button onPress={handleConfirmPayment} disabled={paying} className="rounded-xl">
               {paying ? "Processing..." : "Confirm and Pay"}
             </Button>
 
-            <Button onPress={handleCancel} variant="outline" disabled={paying}>
+            <Button onPress={handleCancel} variant="outline" disabled={paying} className="rounded-xl">
               Cancel
             </Button>
           </View>
 
+          {/* Loading State */}
           {paying && (
-            <View className="mt-4">
-              <ActivityIndicator size="large" color="#3b82f6" />
-              <Text className="text-center text-gray-600 dark:text-gray-400 mt-2">Processing payment...</Text>
+            <View className="mt-6 bg-white dark:bg-gray-800 rounded-xl p-4 w-full border border-gray-100 dark:border-gray-700">
+              <View className="flex-row items-center justify-center gap-3">
+                <ActivityIndicator size="small" color="#3b82f6" />
+                <Text className="text-center text-gray-900 dark:text-white font-medium">
+                  Processing payment...
+                </Text>
+              </View>
             </View>
           )}
         </View>

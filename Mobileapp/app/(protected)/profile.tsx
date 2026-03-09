@@ -36,50 +36,78 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen scrollable className="px-6 pt-8">
-      <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-        Profile
-      </Text>
+    <Screen scrollable className="bg-gray-50 dark:bg-gray-900">
+      <View className="px-6 pt-8 pb-24 gap-5">
+        {/* Header */}
+        <View className="bg-purple-600 rounded-2xl p-6">
+          <Text className="text-purple-100 text-sm font-medium mb-1">Your Account</Text>
+          <Text className="text-white text-3xl font-bold">Profile</Text>
+        </View>
 
+        {/* Wallet Connection */}
+        <View className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            Wallet Connection
+          </Text>
+          <ConnectButton
+            connected={wallet.connected}
+            connecting={wallet.connecting}
+            publicKey={wallet.publicKey?.toBase58() ?? null}
+            onConnect={wallet.connect}
+            onDisconnect={wallet.disconnect}
+          />
+        </View>
 
-       <ConnectButton
-              connected={wallet.connected}
-              connecting={wallet.connecting}
-              publicKey={wallet.publicKey?.toBase58() ?? null}
-              onConnect={wallet.connect}
-              onDisconnect={wallet.disconnect}
-            />
+        {/* Account Information */}
+        <View className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            Account Information
+          </Text>
 
-      <View className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
-        <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-          Email
-        </Text>
-        <Text className="text-base text-gray-900 dark:text-white mb-4">
-          {user?.email}
-        </Text>
+          <View className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+            <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+              Email Address
+            </Text>
+            <Text className="text-base text-gray-900 dark:text-white">
+              {user?.email}
+            </Text>
+          </View>
 
-        <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-          User ID
-        </Text>
-        <Text className="text-base text-gray-900 dark:text-white font-mono">
-          {user?.uid}
-        </Text>
+          <View className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+            <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+              User ID
+            </Text>
+            <Text className="text-sm text-gray-900 dark:text-white font-mono break-all">
+              {user?.uid}
+            </Text>
+          </View>
+
+          <View>
+            <Text className="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-1">
+              Member Since
+            </Text>
+            <Text className="text-base text-gray-900 dark:text-white">
+              {user?.metadata.creationTime
+                ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })
+                : 'N/A'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Sign Out Button */}
+        <Button
+          onPress={handleSignOut}
+          loading={loading}
+          variant="outline"
+          className="rounded-xl border-2 border-red-200 dark:border-red-800"
+        >
+          <Text className="text-red-600 dark:text-red-400 font-semibold">Sign Out</Text>
+        </Button>
       </View>
-
-      <View className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
-        <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-          Account Created
-        </Text>
-        <Text className="text-base text-gray-900 dark:text-white">
-          {user?.metadata.creationTime
-            ? new Date(user.metadata.creationTime).toLocaleDateString()
-            : 'N/A'}
-        </Text>
-      </View>
-
-      <Button onPress={handleSignOut} loading={loading} variant="outline">
-        Sign Out
-      </Button>
     </Screen>
   );
 }

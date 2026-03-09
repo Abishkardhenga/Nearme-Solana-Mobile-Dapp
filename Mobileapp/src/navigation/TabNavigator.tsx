@@ -133,23 +133,26 @@ export function TabNavigator() {
           tabBarInactiveTintColor: "#6B7280",
           tabBarStyle: {
             backgroundColor: "#FFFFFF",
-            borderTopWidth: 1,
-            borderTopColor: "#E5E7EB",
-            paddingBottom: 5,
-            paddingTop: 5,
-            height: 60,
+            borderTopWidth: 0,
+            elevation: 8,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            paddingBottom: 8,
+            paddingTop: 8,
+            height: 65,
           },
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: "600",
+            marginTop: 4,
+          },
+          tabBarIconStyle: {
+            marginTop: 4,
           },
         })}
       >
-        <Tab.Screen
-          name="Profile"
-          component={ProfileNavigator}
-          options={{ tabBarLabel: "Profile" }}
-        />
         <Tab.Screen
           name="Dashboard"
           component={DashboardNavigator}
@@ -164,6 +167,11 @@ export function TabNavigator() {
           name="MyPlace"
           component={MyPlaceNavigator}
           options={{ tabBarLabel: "My Place" }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileNavigator}
+          options={{ tabBarLabel: "Profile" }}
         />
       </Tab.Navigator>
     );
@@ -193,23 +201,26 @@ export function TabNavigator() {
         tabBarInactiveTintColor: "#6B7280",
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
-          borderTopWidth: 1,
-          borderTopColor: "#E5E7EB",
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          borderTopWidth: 0,
+          elevation: 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 65,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: "600",
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
         },
       })}
     >
-      <Tab.Screen
-        name="Profile"
-        component={ProfileNavigator}
-        options={{ tabBarLabel: "Profile" }}
-      />
       <Tab.Screen
         name="Discover"
         component={DiscoverNavigator}
@@ -224,6 +235,11 @@ export function TabNavigator() {
         name="Saved"
         component={SavedRestaurantsScreen}
         options={{ tabBarLabel: "Saved" }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileNavigator}
+        options={{ tabBarLabel: "Profile" }}
       />
     </Tab.Navigator>
   )
