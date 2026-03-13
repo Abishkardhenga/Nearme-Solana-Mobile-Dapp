@@ -13,7 +13,15 @@
 
 |                     |                                                                                                                         |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **▶ Live Demo**     | [Watch the full product demo on Loom](https://www.loom.com/share/090b491a4a2f4b4b847f6f38407b941d)                      |
+| **▶ Live Demo**     | [Watch the full product demo on Loom]
+
+
+Consumer flow/ demo  :  [View Demo ]  ( https://www.loom.com/share/8070ff68d02f4acb8fde1496827b52dd  )
+
+Merchant flow / demo : [ View Demo ] ( https://www.loom.com/share/bc53995feac24803ad02f091bf479044 )
+
+
+|
 | **📊 Presentation** | [View the project presentation on Google Drive](https://drive.google.com/file/d/1Y64HRiFlg3xJJ3w5qR8gvp7mdHW5dpwH/view) |
 
 ---
