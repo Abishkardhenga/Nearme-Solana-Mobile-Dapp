@@ -35,6 +35,8 @@ export interface Merchant {
   totalVolumeUSDC: number;
   averageRating: number;
   ratingCount: number;
+  verified?: boolean;
+  blockchainRegistered?: boolean;
   distance?: number; // Distance in km
 }
 

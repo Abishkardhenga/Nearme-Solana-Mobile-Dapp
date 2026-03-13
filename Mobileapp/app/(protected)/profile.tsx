@@ -3,7 +3,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
-import { useAnotherWallet } from '@/hooks/useAnotherWallet';
+import { useWallet } from '@/hooks/useWallet';
 import { ConnectButton } from '@/components/ConnectButton';
 
 
@@ -13,9 +13,9 @@ export default function ProfileScreen() {
 
 
 
-  
 
-  const wallet = useAnotherWallet()
+
+  const wallet = useWallet()
 
 
   const handleSignOut = async () => {

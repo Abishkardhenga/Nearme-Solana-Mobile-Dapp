@@ -77,6 +77,8 @@ export default function MerchantDashboardScreen({ navigation }: any) {
         totalVolumeUSDC: merchantData.totalVolumeUSDC || 0,
         averageRating: merchantData.averageRating || 0,
         ratingCount: merchantData.ratingCount || 0,
+        verified: merchantData.verified ?? false,
+        blockchainRegistered: merchantData.blockchainRegistered ?? false,
       });
 
       // Load recent transactions (with error handling for missing index)
@@ -216,6 +218,29 @@ export default function MerchantDashboardScreen({ navigation }: any) {
             </View>
           </View>
 
+          {/* Registration Warning Banner */}
+          {(!merchant.verified || !merchant.blockchainRegistered) && (
+            <View className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
+              <View className="flex-row items-start gap-3">
+                <Text className="text-2xl">⚠️</Text>
+                <View className="flex-1">
+                  <Text className="text-base font-bold text-orange-900 dark:text-orange-100 mb-1">
+                    Registration Incomplete
+                  </Text>
+                  <Text className="text-sm text-orange-700 dark:text-orange-300 mb-3">
+                    Complete your business registration to start accepting payments and appear on the merchant map.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("RegisterMerchant")}
+                    className="bg-orange-600 rounded-lg px-4 py-2 self-start"
+                  >
+                    <Text className="text-white font-semibold text-sm">Complete Registration →</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Status Toggle */}
           <View className="bg-white dark:bg-gray-800 rounded-xl p-4 flex-row justify-between items-center border border-gray-100 dark:border-gray-700">
             <View className="pr-3 flex-1">
@@ -350,9 +375,15 @@ export default function MerchantDashboardScreen({ navigation }: any) {
               View Complete Details
             </Button>
 
-            <Button onPress={() => navigation.navigate("RegisterMerchant")} variant="outline" className="rounded-xl">
-              Edit Business Info
-            </Button>
+            {merchant.verified && merchant.blockchainRegistered ? (
+              <Button onPress={() => navigation.navigate("RegisterMerchant")} variant="outline" className="rounded-xl">
+                Edit Business Info
+              </Button>
+            ) : (
+              <Button onPress={() => navigation.navigate("RegisterMerchant")} className="bg-purple-600 rounded-xl">
+                Complete Business Registration
+              </Button>
+            )}
           </View>
         </View>
       </ScrollView>

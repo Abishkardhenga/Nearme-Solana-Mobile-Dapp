@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef} from "react";
-import {View, Text, TextInput, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image} from "react-native";
+import {View, Text, TextInput, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image, Modal, Linking} from "react-native";
 import {Screen} from "@/components/ui/Screen";
 import {Button} from "@/components/ui/Button";
 import {useAuth} from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ import {
   REGISTRATION_FEE_SOL,
   REGISTRATION_FEE_LAMPORTS,
 } from "@/services/merchantContract";
+import {useWallet} from "@/hooks/useWallet";
 
 interface MerchantFormData {
   name: string;
@@ -38,6 +39,7 @@ const CATEGORIES = [
 export default function RegisterMerchantScreen({ navigation }: any) {
   const {user} = useAuth();
   const {walletPublicKey: walletPublicKeyString} = useWalletStore();
+  const wallet = useWallet();
 
   // Convert string to PublicKey object
   const walletPublicKey = walletPublicKeyString ? new PublicKey(walletPublicKeyString) : null;
@@ -67,7 +69,10 @@ export default function RegisterMerchantScreen({ navigation }: any) {
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [claimedLocation, setClaimedLocation] = useState<{latitude: number; longitude: number} | null>(null);
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
-  const [loadingLocation, setLoadingLocation] = useState<boolean>(true);
+  const [loadingLocation, setLoadingLocation] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState<boolean>(false);
 
   // Photo state
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -75,16 +80,40 @@ export default function RegisterMerchantScreen({ navigation }: any) {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const mapRef = useRef<MapView>(null);
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [txSignature, setTxSignature] = useState<string>("");
 
-  // Request location permission and get current location
+  const mapRef = useRef<MapView>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize with default location (can be changed)
   useEffect(() => {
-    (async () => {
+    // Set default location (e.g., San Francisco or any default city)
+    if (!claimedLocation) {
+      setClaimedLocation({
+        latitude: 37.7749, // San Francisco
+        longitude: -122.4194,
+      });
+    }
+
+    // Cleanup function to clear search timeout
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Get current location when requested
+  const getCurrentLocation = async () => {
+    setLoadingLocation(true);
+    try {
       const {status} = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission Denied",
-          "Location permission is required to register as a merchant. Please enable it in your device settings."
+          "Location permission is needed to use your current location."
         );
         setLoadingLocation(false);
         return;
@@ -92,24 +121,110 @@ export default function RegisterMerchantScreen({ navigation }: any) {
 
       setLocationPermission(true);
 
-      try {
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
 
-        setCurrentLocation(location);
-        setClaimedLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
-        setLoadingLocation(false);
-      } catch (error) {
-        console.error("Failed to get location:", error);
-        Alert.alert("Error", "Failed to get your current location. Please try again.");
-        setLoadingLocation(false);
+      setCurrentLocation(location);
+      setClaimedLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      // Animate map to current location
+      mapRef.current?.animateToRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      });
+    } catch (error) {
+      console.error("Failed to get location:", error);
+      Alert.alert("Error", "Failed to get your current location. Please try again.");
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  // Search for location using Google Geocoding API with debouncing
+  const searchLocation = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+
+    console.log("🔍 Searching for location:", query);
+    setSearching(true);
+
+    try {
+      // Using Google Geocoding API
+      const apiKey = "AIzaSyCFp5EXcq4cQDjCunrqjfuk-8ex2rCt6mA";
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
+      console.log("📡 Fetching URL:", url);
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      console.log("📦 Full API Response:", JSON.stringify(data, null, 2));
+      console.log("📦 Response status:", data.status);
+      console.log("📍 Results count:", data.results?.length || 0);
+
+      if (data.status === "OK" && data.results && data.results.length > 0) {
+        console.log("✅ Found results:", data.results.length);
+        console.log("📍 First result:", data.results[0].formatted_address);
+        setSearchResults(data.results.slice(0, 5)); // Show top 5 results
+      } else if (data.status === "ZERO_RESULTS") {
+        console.log("❌ Zero results from API for query:", query);
+        setSearchResults([]);
+      } else if (data.status === "REQUEST_DENIED") {
+        console.error("❌ API Request denied - check API key");
+        console.error("Error message:", data.error_message);
+        Alert.alert("Search Error", "API access denied. Please check API configuration.");
+        setSearchResults([]);
+      } else {
+        console.log("❌ Unexpected status:", data.status);
+        setSearchResults([]);
       }
-    })();
-  }, []);
+    } catch (error) {
+      console.error("❌ Search failed with exception:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Debounced search handler
+  const handleSearchInput = (text: string) => {
+    setSearchQuery(text);
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for search
+    searchTimeoutRef.current = setTimeout(() => {
+      searchLocation(text);
+    }, 500); // Wait 500ms after user stops typing
+  };
+
+  // Select a search result
+  const selectSearchResult = (result: any) => {
+    const {lat, lng} = result.geometry.location;
+    setClaimedLocation({latitude: lat, longitude: lng});
+    setSearchQuery(result.formatted_address);
+    setSearchResults([]);
+
+    // Animate map to selected location
+    mapRef.current?.animateToRegion({
+      latitude: lat,
+      longitude: lng,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    });
+  };
 
   const handlePickPhoto = async () => {
     const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -157,13 +272,8 @@ export default function RegisterMerchantScreen({ navigation }: any) {
       return;
     }
 
-    if (!currentLocation || !claimedLocation) {
-      Alert.alert("Location Required", "Please enable location services and ensure GPS signal is strong.");
-      return;
-    }
-
-    if (!locationPermission) {
-      Alert.alert("Permission Required", "Location permission is required to register.");
+    if (!claimedLocation) {
+      Alert.alert("Location Required", "Please select a location for your business on the map.");
       return;
     }
 
@@ -238,13 +348,13 @@ export default function RegisterMerchantScreen({ navigation }: any) {
       // Step 3: Save merchant data to Firestore
       console.log("Step 3: Saving to Firestore...");
       const merchantData = {
-        // GPS data
-        actualLat: currentLocation!.coords.latitude,
-        actualLng: currentLocation!.coords.longitude,
+        // GPS data (use claimed location if current location not available)
+        actualLat: currentLocation?.coords.latitude || claimedLocation!.latitude,
+        actualLng: currentLocation?.coords.longitude || claimedLocation!.longitude,
         claimedLat: claimedLocation!.latitude,
         claimedLng: claimedLocation!.longitude,
-        accuracy: currentLocation!.coords.accuracy || 0,
-        mocked: currentLocation!.mocked || false,
+        accuracy: currentLocation?.coords.accuracy || 0,
+        mocked: currentLocation?.mocked || false,
 
         // Merchant data
         walletAddress: walletPublicKey.toBase58(),
@@ -283,16 +393,9 @@ export default function RegisterMerchantScreen({ navigation }: any) {
 
       console.log("Registration successful for user:", user.uid);
 
-      Alert.alert(
-        "Success!",
-        `Your business has been registered successfully on the Solana blockchain!\n\nTransaction: ${onChainResult.signature?.slice(0, 8)}...`,
-        [
-          {
-            text: "View Dashboard",
-            onPress: () => navigation.navigate("MerchantDashboard"),
-          },
-        ]
-      );
+      // Show success modal
+      setTxSignature(onChainResult.signature || "");
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error("❌❌❌ REGISTRATION SCREEN - Registration failed ❌❌❌");
       console.error("  Error type:", error.constructor?.name);
@@ -348,43 +451,11 @@ export default function RegisterMerchantScreen({ navigation }: any) {
     }
   };
 
-  if (loadingLocation) {
+  if (!claimedLocation) {
     return (
       <Screen className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text className="mt-4 text-gray-600 dark:text-gray-400">Getting your location...</Text>
-      </Screen>
-    );
-  }
-
-  if (!locationPermission || !currentLocation || !claimedLocation) {
-    return (
-      <Screen className="flex-1 justify-center items-center px-6">
-        <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">Location Required</Text>
-        <Text className="text-center text-gray-600 dark:text-gray-400 mb-6">
-          You need to enable location services to register as a merchant. This helps verify that you are physically
-          present at your business location.
-        </Text>
-        <Button
-          onPress={async () => {
-            setLoadingLocation(true);
-            const {status} = await Location.requestForegroundPermissionsAsync();
-            if (status === "granted") {
-              const location = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.High,
-              });
-              setCurrentLocation(location);
-              setClaimedLocation({
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-              });
-              setLocationPermission(true);
-            }
-            setLoadingLocation(false);
-          }}
-        >
-          Enable Location
-        </Button>
+        <Text className="mt-4 text-gray-600 dark:text-gray-400">Loading map...</Text>
       </Screen>
     );
   }
@@ -401,6 +472,120 @@ export default function RegisterMerchantScreen({ navigation }: any) {
           {/* Map Section */}
           <View className="mb-6">
             <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Location</Text>
+
+            {/* Search Bar */}
+            <View className="mb-3">
+              <View className="flex-row gap-2">
+                <View className="flex-1">
+                  <TextInput
+                    className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 pr-12 text-gray-900 dark:text-white"
+                    placeholder="Search address or place..."
+                    placeholderTextColor="#9ca3af"
+                    value={searchQuery}
+                    onChangeText={handleSearchInput}
+                    returnKeyType="search"
+                    onSubmitEditing={() => searchLocation(searchQuery)}
+                  />
+                  {searching ? (
+                    <ActivityIndicator
+                      size="small"
+                      color="#3b82f6"
+                      style={{position: "absolute", right: 12, top: 14}}
+                    />
+                  ) : searchQuery.trim().length > 0 ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSearchQuery("");
+                        setSearchResults([]);
+                      }}
+                      style={{position: "absolute", right: 12, top: 14}}
+                    >
+                      <Text className="text-gray-400 text-lg">✕</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  onPress={() => searchQuery.trim() ? searchLocation(searchQuery) : null}
+                  disabled={!searchQuery.trim() || searching}
+                  className={`rounded-lg px-4 py-3 items-center justify-center ${
+                    searchQuery.trim() && !searching ? "bg-green-600" : "bg-gray-400"
+                  }`}
+                >
+                  <Text className="text-white font-medium text-base">🔍</Text>
+                </TouchableOpacity>
+                {/* <TouchableOpacity
+                  onPress={getCurrentLocation}
+                  disabled={loadingLocation}
+                  className="bg-blue-600 rounded-lg px-4 py-3 items-center justify-center"
+                >
+                  {loadingLocation ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text className="text-white font-medium text-base">📍</Text>
+                  )}
+                </TouchableOpacity> */}
+              </View>
+
+              {/* Search Results Dropdown */}
+              {searchQuery.trim().length > 0 && !searching && (
+                <View
+                  className="bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400 rounded-lg mt-2 shadow-lg"
+                  style={{zIndex: 1000, elevation: 1000}}
+                >
+                  {searchResults.length > 0 ? (
+                    <>
+                      <View className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-700">
+                        <Text className="text-xs font-semibold text-blue-900 dark:text-blue-100">
+                          {searchResults.length} location{searchResults.length > 1 ? 's' : ''} found
+                        </Text>
+                      </View>
+                      <ScrollView nestedScrollEnabled style={{maxHeight: 200}}>
+                        {searchResults.map((result, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            onPress={() => selectSearchResult(result)}
+                            className={`px-4 py-3 active:bg-blue-50 dark:active:bg-blue-900/20 ${
+                              index < searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""
+                            }`}
+                          >
+                            <Text className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                              📍 {result.formatted_address}
+                            </Text>
+                            <Text className="text-xs text-gray-500 dark:text-gray-400">
+                              {result.types?.[0]?.replace(/_/g, " ") || "location"}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </>
+                  ) : searchQuery.length > 2 ? (
+                    <View className="px-4 py-6">
+                      <Text className="text-lg mb-2 text-center">🔍</Text>
+                      <Text className="text-sm text-gray-500 dark:text-gray-400 text-center font-medium">
+                        No results found for "{searchQuery}"
+                      </Text>
+                      <Text className="text-xs text-gray-400 dark:text-gray-500 text-center mt-2">
+                        Try searching for a city, address, or landmark
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => searchLocation(searchQuery)}
+                        className="mt-3 bg-blue-600 rounded-lg py-2 px-4 self-center"
+                      >
+                        <Text className="text-white text-xs font-medium">Try Again</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View className="px-4 py-4">
+                      <Text className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                        Type at least 3 characters to search
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {/* Map */}
             <View className="h-64 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">
               <MapView
                 ref={mapRef}
@@ -409,11 +594,15 @@ export default function RegisterMerchantScreen({ navigation }: any) {
                 initialRegion={{
                   latitude: claimedLocation.latitude,
                   longitude: claimedLocation.longitude,
-                  latitudeDelta: 0.005,
-                  longitudeDelta: 0.005,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                onPress={(e) => {
+                  // Allow tapping anywhere on map to place pin
+                  setClaimedLocation(e.nativeEvent.coordinate);
                 }}
                 showsUserLocation
-                showsMyLocationButton
+                showsMyLocationButton={false}
               >
                 <Marker
                   coordinate={claimedLocation}
@@ -424,8 +613,16 @@ export default function RegisterMerchantScreen({ navigation }: any) {
                 />
               </MapView>
             </View>
-            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Drag the pin to your exact business location. You must be within 50 metres to register.
+
+            <View className="flex-row items-center mt-2 gap-2">
+              <Text className="text-xs text-gray-500 dark:text-gray-400 flex-1">
+                📍 Tap anywhere on the map or drag the pin to set your business location
+              </Text>
+            </View>
+
+            {/* Show coordinates */}
+            <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              Coordinates: {claimedLocation.latitude.toFixed(6)}, {claimedLocation.longitude.toFixed(6)}
             </Text>
           </View>
 
@@ -557,36 +754,154 @@ export default function RegisterMerchantScreen({ navigation }: any) {
             </View>
           )}
 
-          {/* Registration Fee Info */}
-          <View className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-            <Text className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-1">
-              📝 Registration Fee
+          {/* Registration Fee Info / Wallet Status */}
+          <View className={`mb-6 p-4 rounded-lg border ${
+            walletPublicKey
+              ? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800"
+              : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+          }`}>
+            <Text className={`text-sm font-medium mb-1 ${
+              walletPublicKey
+                ? "text-purple-900 dark:text-purple-100"
+                : "text-blue-900 dark:text-blue-100"
+            }`}>
+              {walletPublicKey ? "📝 Registration Fee" : "💳 Wallet Required"}
             </Text>
-            <Text className="text-xs text-purple-700 dark:text-purple-300 mb-2">
-              One-time fee: {REGISTRATION_FEE_SOL} SOL ({REGISTRATION_FEE_LAMPORTS.toLocaleString()} lamports)
-            </Text>
-            <Text className="text-xs text-purple-600 dark:text-purple-400">
-              This fee is recorded on the Solana blockchain and ensures verified merchant status. Make sure you have
-              connected your wallet and have sufficient SOL balance.
-            </Text>
-            {!walletPublicKey && (
-              <Text className="text-xs text-red-600 dark:text-red-400 mt-2 font-medium">
-                ⚠️ Wallet not connected! Please connect your wallet to register.
-              </Text>
-            )}
-            {walletPublicKey && (
-              <Text className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium">
-                ✓ Wallet connected: {walletPublicKey.toBase58().slice(0, 8)}...
-              </Text>
+
+            {!walletPublicKey ? (
+              <>
+                <Text className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+                  You need to connect your Solana wallet to register your business.
+                </Text>
+                <Text className="text-xs text-blue-600 dark:text-blue-400">
+                  Registration fee: {REGISTRATION_FEE_SOL} SOL ({REGISTRATION_FEE_LAMPORTS.toLocaleString()} lamports).
+                  Click the button below to connect your wallet and proceed with registration.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text className="text-xs text-purple-700 dark:text-purple-300 mb-2">
+                  One-time fee: {REGISTRATION_FEE_SOL} SOL ({REGISTRATION_FEE_LAMPORTS.toLocaleString()} lamports)
+                </Text>
+                <Text className="text-xs text-purple-600 dark:text-purple-400 mb-2">
+                  This fee is recorded on the Solana blockchain and ensures verified merchant status.
+                  Make sure you have sufficient SOL balance.
+                </Text>
+                <Text className="text-xs text-green-600 dark:text-green-400 font-medium">
+                  ✓ Wallet connected: {walletPublicKey.toBase58().slice(0, 8)}...{walletPublicKey.toBase58().slice(-8)}
+                </Text>
+              </>
             )}
           </View>
 
-          {/* Submit Button */}
-          <Button onPress={handleSubmit} disabled={isSubmitting || !walletPublicKey} className="mb-6">
-            {isSubmitting ? "Registering..." : "Pay Fee & Register Business"}
-          </Button>
+          {/* Wallet Connection / Submit Button */}
+          {!walletPublicKey ? (
+            <Button
+              onPress={wallet.connect}
+              disabled={wallet.connecting}
+              className="mb-6 bg-blue-600"
+            >
+              {wallet.connecting ? "Connecting Wallet..." : "Connect Wallet to Continue"}
+            </Button>
+          ) : (
+            <Button
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+              className="mb-6"
+            >
+              {isSubmitting ? "Registering..." : "Pay Fee & Register Business"}
+            </Button>
+          )}
         </View>
       </ScrollView>
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSuccessModal(false);
+          navigation.navigate("MerchantDashboard");
+        }}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white dark:bg-gray-800 rounded-3xl p-8 w-full max-w-sm shadow-2xl">
+            {/* Success Icon */}
+            <View className="items-center mb-6">
+              <View className="bg-green-100 dark:bg-green-900/30 rounded-full w-20 h-20 items-center justify-center mb-4">
+                <Text className="text-5xl">✓</Text>
+              </View>
+              <Text className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">
+                Registration Successful!
+              </Text>
+              <Text className="text-base text-gray-600 dark:text-gray-400 text-center">
+                Your business is now registered on the Solana blockchain
+              </Text>
+            </View>
+
+            {/* Transaction Details */}
+            <View className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-4 mb-6 border border-purple-200 dark:border-purple-800">
+              <Text className="text-xs uppercase tracking-wide font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                Transaction Signature
+              </Text>
+              <Text className="text-sm font-mono text-purple-700 dark:text-purple-300 break-all">
+                {txSignature.slice(0, 16)}...{txSignature.slice(-16)}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  const url = `https://explorer.solana.com/tx/${txSignature}?cluster=testnet`;
+                  Linking.openURL(url);
+                }}
+                className="mt-3"
+              >
+                <Text className="text-sm font-medium text-purple-600 dark:text-purple-400 text-center">
+                  View on Solana Explorer →
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Success Details */}
+            <View className="mb-6 gap-3">
+              <View className="flex-row items-center">
+                <View className="bg-green-100 dark:bg-green-900/30 rounded-full w-8 h-8 items-center justify-center mr-3">
+                  <Text className="text-green-600 dark:text-green-400">✓</Text>
+                </View>
+                <Text className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                  Registration fee paid ({REGISTRATION_FEE_SOL} SOL)
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="bg-green-100 dark:bg-green-900/30 rounded-full w-8 h-8 items-center justify-center mr-3">
+                  <Text className="text-green-600 dark:text-green-400">✓</Text>
+                </View>
+                <Text className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                  Business verified on blockchain
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="bg-green-100 dark:bg-green-900/30 rounded-full w-8 h-8 items-center justify-center mr-3">
+                  <Text className="text-green-600 dark:text-green-400">✓</Text>
+                </View>
+                <Text className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                  Ready to accept payments
+                </Text>
+              </View>
+            </View>
+
+            {/* Action Button */}
+            <Button
+              onPress={() => {
+                setShowSuccessModal(false);
+                navigation.navigate("MerchantDashboard");
+              }}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl"
+            >
+              View Dashboard
+            </Button>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }

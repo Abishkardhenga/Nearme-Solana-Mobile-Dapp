@@ -24,7 +24,7 @@ export const useWalletStore = create<WalletState>()(
       // initial state
       favorites: [],
       searchHistory: [],
-      isDevnet: false,
+      isDevnet: false, // Set to false to use testnet (wallet doesn't support devnet properly)
 
       // actions
       addFavorite: (address) =>
