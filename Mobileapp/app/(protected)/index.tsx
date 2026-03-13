@@ -2,11 +2,11 @@ import { View, Text } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { ConnectButton } from '@/components/ConnectButton';
-import {useAnotherWallet} from "@/hooks/useAnotherWallet"
+import {useWallet} from "@/hooks/useWallet"
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const wallet = useAnotherWallet()
+  const wallet = useWallet()
 
   return (
     <Screen className="px-6 pt-8">
