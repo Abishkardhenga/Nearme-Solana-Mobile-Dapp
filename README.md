@@ -16,9 +16,11 @@
 | **▶ Live Demo**     | [Watch the full product demo on Loom]
 
 
-Consumer flow/ demo  :  [View Demo ]  ( https://www.loom.com/share/8070ff68d02f4acb8fde1496827b52dd  )
+Consumer flow/ demo  :  [View Demo ]( https://www.loom.com/share/8070ff68d02f4acb8fde1496827b52dd  )
 
-Merchant flow / demo : [ View Demo ] ( https://www.loom.com/share/bc53995feac24803ad02f091bf479044 )
+Merchant flow / demo : [View Demo ]( https://www.loom.com/share/bc53995feac24803ad02f091bf479044 )
+
+
 
 
 |
